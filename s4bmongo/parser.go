@@ -136,7 +136,7 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 				c := &collection{Typ: v.name, Name: collectionName, Fields: make([]*field, 0, len(s.Fields.List))}
 				v.Parser.collections = append(v.Parser.collections, c)
 
-				expandStruct(s)
+				c.Fields = expandStruct(s)
 			}
 
 			//keys := strings.Split(reflect.StructTag(f.Tag.Value[1:len(f.Tag.Value)-1]).Get("json"), ",")
@@ -224,9 +224,8 @@ func excludeTestFiles(fi os.FileInfo) bool {
 	return !strings.HasSuffix(fi.Name(), "_test.go")
 }
 
-func expandStruct(s *ast.StructType) {
-	fields := fnWalk("", "", s.Fields.List)
-	spew.Dump(fields)
+func expandStruct(s *ast.StructType) []*field {
+	return fnWalk("", "", s.Fields.List)
 }
 
 func fnWalk(prefix, goPrefix string, astFields []*ast.Field) []*field {
@@ -238,15 +237,16 @@ func fnWalk(prefix, goPrefix string, astFields []*ast.Field) []*field {
 		tag := getTag(f.Tag, "bson", f.Names[0].Name, 0)
 		bsonPath := prefix + tag
 		goPath := goPrefix + f.Names[0].Name
-		fields = append(fields, &field{
-			Prop:     f.Names[0].Name,
-			GoPath:   goPath,
-			BsonPath: bsonPath,
-			BsonProp: tag,
-			Type:     f.Names[0].Name,
-		})
+
 		switch n := f.Type.(type) {
 		case *ast.Ident:
+			fields = append(fields, &field{
+				Prop:     f.Names[0].Name,
+				GoPath:   goPath,
+				BsonPath: bsonPath,
+				BsonProp: tag,
+				Type:     n.Name,
+			})
 			if n.Obj == nil {
 				continue
 			}
@@ -256,7 +256,6 @@ func fnWalk(prefix, goPrefix string, astFields []*ast.Field) []*field {
 		case *ast.StructType:
 			fields = append(fields, fnWalk(bsonPath, goPath, n.Fields.List)...)
 		case *ast.StarExpr:
-			spew.Dump(1)
 			if t, ok := n.X.(*ast.Ident).Obj.Decl.(*ast.TypeSpec).Type.(*ast.StructType); ok {
 				fields = append(fields, fnWalk(bsonPath, goPath, t.Fields.List)...)
 			}

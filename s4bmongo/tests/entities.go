@@ -7,7 +7,9 @@ type User struct {
 	Address struct {
 		City string
 	} `bson:"address"`
-	Fin *Finance
+	Fin         *Finance
+	Permissions map[string]interface{}
+	Ids         map[string]int
 }
 
 type Profile struct {
