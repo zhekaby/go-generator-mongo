@@ -2,4 +2,4 @@ module github.com/zhekaby/go-generator-mongo
 
 go 1.16
 
-require go.mongodb.org/mongo-driver v1.7.0
+require github.com/davecgh/go-spew v1.1.1
