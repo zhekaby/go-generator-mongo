@@ -1,5 +1,5 @@
 package main
 
-//s4bmongo:entity
+//mongowarapper:entity
 type User struct {
 }

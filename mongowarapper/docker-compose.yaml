@@ -1,0 +1,23 @@
+version: "3"
+services:
+  db1_mongowarapper_test_node:
+    hostname: db1
+    image: mongo:latest
+    container_name: db1_mongowarapper_test_node
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "mongowarapper-tests", "--port", "33001"]
+    depends_on: [ "db2_mongowarapper_test_node" ]
+    links:
+      - db2_mongowarapper_test_node
+    ports:
+      - "33001:33001"
+    healthcheck:
+      test: test $$(echo "rs.initiate({_id:'mongowarapper-tests',members:[{_id:0,host:'db1:33001'},{_id:1,host:'db2:33002'}]}).ok || mongowarapper-tests.status().ok" | mongo --port 33001 --quiet) -eq 1
+      interval: 10s
+      start_period: 1s
+  db2_mongowarapper_test_node:w
+    hostname: db2
+    image: mongo:latest
+    container_name: db2_mongowarapper_test_node
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "mongowarapper-tests", "--quiet", "--port", "33002" ]
+    ports:
+      - "33002:33002"

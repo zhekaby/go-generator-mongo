@@ -8,6 +8,7 @@ import (
 
 var cs = flag.String("cs", "", "default connection string")
 var csVar = flag.String("cs_var", "", "env var name represents connection string")
+var dbVar = flag.String("db_var", "", "env var name represents db to connect, otherwise db is taken from connection string")
 
 func main() {
 	flag.Parse()
@@ -19,7 +20,7 @@ func main() {
 	}
 
 	for _, file := range files {
-		p := NewParser(*cs, *csVar, file)
+		p := NewParser(*cs, *csVar, *dbVar, file)
 		if err := p.Parse(); err != nil {
 			fmt.Println(err)
 			os.Exit(1)

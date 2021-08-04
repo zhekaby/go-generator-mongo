@@ -1,6 +1,6 @@
 package tests
 
-//s4bmongo:collection users
+//mongowarapper:collection users
 type User struct {
 	Email   string  `bson:"email"`
 	Profile Profile `bson:"profile"`

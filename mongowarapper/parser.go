@@ -15,9 +15,9 @@ import (
 )
 
 type Parser struct {
-	Cs, CsVar, In, Dir, PkgPath, PkgName string
-	isDir                                bool
-	collections                          []*collection
+	Cs, CsVar, DbVar, In, Dir, PkgPath, PkgName string
+	isDir                                       bool
+	collections                                 []*collection
 	//Decls []ast.Decl
 }
 
@@ -37,10 +37,10 @@ type visitor struct {
 }
 
 var (
-	structComment = "s4bmongo:collection"
+	structComment = "mongowarapper:collection"
 )
 
-func NewParser(cs, csVar, in string) *Parser {
+func NewParser(cs, csVar, dbVar, in string) *Parser {
 	root, _ := os.Getwd()
 	fin := path.Join(root, in)
 	fInfo, err := os.Stat(fin)
@@ -50,7 +50,7 @@ func NewParser(cs, csVar, in string) *Parser {
 	}
 
 	p := &Parser{
-		Cs: cs, CsVar: csVar, In: fin, isDir: fInfo.IsDir(),
+		Cs: cs, CsVar: csVar, DbVar: dbVar, In: fin, isDir: fInfo.IsDir(),
 	}
 
 	if fInfo.IsDir() {
