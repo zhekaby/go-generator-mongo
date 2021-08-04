@@ -15,33 +15,30 @@ import (
 	"strings"
 )
 
+var (
+	structComment = "swagger:parameters"
+	bodyComment   = "in: body"
+)
+
 type Parser struct {
-	Cs, CsVar, DbVar, In, Dir, PkgPath, PkgName string
-	isDir                                       bool
-	collections                                 []*collection
-	//Decls []ast.Decl
+	In, Dir, PkgPath, PkgName string
+	isDir                     bool
+	Structs                   []*structInfo
 }
 
-type collection struct {
-	Typ, Name string
-	Fields    []*field
+type structInfo struct {
+	Name         string
+	Body         *ast.StructType
+	BodyTypeName string
+	Fields       []*field
 }
-
-type field struct {
-	Prop, Type, BsonProp, BsonPath, GoPath string
-}
-
 type visitor struct {
 	*Parser
 
 	name string
 }
 
-var (
-	structComment = "mongowarapper:collection"
-)
-
-func NewParser(cs, csVar, dbVar, in string) *Parser {
+func NewParser(in string) *Parser {
 	root, _ := os.Getwd()
 	fin := path.Join(root, in)
 	fInfo, err := os.Stat(fin)
@@ -51,7 +48,7 @@ func NewParser(cs, csVar, dbVar, in string) *Parser {
 	}
 
 	p := &Parser{
-		Cs: cs, CsVar: csVar, DbVar: dbVar, In: fin, isDir: fInfo.IsDir(),
+		In: fin, isDir: fInfo.IsDir(), Structs: make([]*structInfo, 0, 20),
 	}
 
 	if fInfo.IsDir() {
@@ -134,47 +131,25 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 
 		{
 			if s, ok := n.Type.(*ast.StructType); ok {
-				c := &collection{Typ: v.name, Name: collectionName, Fields: make([]*field, 0, len(s.Fields.List))}
-				v.Parser.collections = append(v.Parser.collections, c)
-
-				c.Fields = expandStruct(s)
+				for _, f := range s.Fields.List {
+					if needField(f, bodyComment) {
+						st, ok := f.Type.(*ast.StarExpr).X.(*ast.Ident).Obj.Decl.(*ast.TypeSpec).Type.(*ast.StructType)
+						if !ok {
+							st, ok = f.Type.(*ast.StructType)
+							if !ok {
+								return nil
+							}
+						}
+						name := f.Type.(*ast.StarExpr).X.(*ast.Ident).Obj.Name
+						v.Structs = append(v.Structs, &structInfo{
+							Name:         n.Name.Name,
+							Body:         st,
+							BodyTypeName: name,
+							Fields:       expandStruct(st, name),
+						})
+					}
+				}
 			}
-
-			//keys := strings.Split(reflect.StructTag(f.Tag.Value[1:len(f.Tag.Value)-1]).Get("json"), ",")
-			//res := &structProps{Name: v.name, QueryFields: make([]*QueryFieldProps, 0, 20)}
-			//if s, ok := n.Type.(*ast.StructType); ok {
-			//	for _, f := range s.Fields.List {
-			//		if f.Names[0].Name == "Body" {
-			//			star, ok := f.Type.(*ast.StarExpr)
-			//			if !ok {
-			//				panic("only star expression supported for Body. Use: Body *type")
-			//			}
-			//			res.BodyType = star.X.(*ast.Ident).Name
-			//		} else if f.Names[0].Name == "Query" {
-			//			star, ok := f.Type.(*ast.StarExpr)
-			//			if !ok {
-			//				panic("only star expression supported for Query. Use: Query *type")
-			//			}
-			//			res.QueryType = star.X.(*ast.Ident).Name
-			//			ss, _ := v.findStruct(res.QueryType)
-			//			for _, f := range ss.Fields.List {
-			//				p := &QueryFieldProps{
-			//					Type:  f.Type.(*ast.Ident).String(),
-			//					Field: f.Names[0].Name,
-			//				}
-			//				if f.Tag.Value == "" {
-			//					p.Name = f.Names[0].Name
-			//				} else {
-			//					keys := strings.Split(reflect.StructTag(f.Tag.Value[1:len(f.Tag.Value)-1]).Get("json"), ",")
-			//					p.Name = keys[0]
-			//				}
-			//				res.QueryFields = append(res.QueryFields, p)
-			//			}
-			//		}
-			//	}
-
-			//}
-			//v.StructNames = append(v.StructNames, res)
 			return nil
 		}
 
@@ -221,12 +196,28 @@ func (p *Parser) needType(comments *ast.CommentGroup) (collection string) {
 	return
 }
 
+func needField(f *ast.Field, reqComment string) bool {
+	if f.Doc == nil {
+		return false
+	}
+	for _, c := range f.Doc.List {
+		if strings.Contains(c.Text, reqComment) {
+			return true
+		}
+	}
+	return false
+}
+
 func excludeTestFiles(fi os.FileInfo) bool {
 	return !strings.HasSuffix(fi.Name(), "_test.go")
 }
 
-func expandStruct(s *ast.StructType) []*field {
-	return fnWalk("", "", s.Fields.List)
+type field struct {
+	Prop, Type, JsonProp, JsonPath, Ns, NsShort string
+}
+
+func expandStruct(s *ast.StructType, ns string) []*field {
+	return fnWalk("", ns, s.Fields.List)
 }
 
 func fnWalk(prefix, goPrefix string, astFields []*ast.Field) []*field {
@@ -235,17 +226,19 @@ func fnWalk(prefix, goPrefix string, astFields []*ast.Field) []*field {
 		prefix += "."
 	}
 	for _, f := range astFields {
-		tag := getTag(f.Tag, "bson", f.Names[0].Name, 0)
+		tag := getTag(f.Tag, "json", f.Names[0].Name, 0)
 		bsonPath := prefix + tag
-		goPath := goPrefix + f.Names[0].Name
-
+		goPath := goPrefix + "." + f.Names[0].Name
+		idx := strings.IndexByte(goPath, byte('.'))
 		switch n := f.Type.(type) {
 		case *ast.Ident:
+
 			fields = append(fields, &field{
 				Prop:     f.Names[0].Name,
-				GoPath:   goPath,
-				BsonPath: bsonPath,
-				BsonProp: tag,
+				Ns:       goPath,
+				NsShort:  goPath[idx+1:],
+				JsonPath: bsonPath,
+				JsonProp: tag,
 				Type:     n.Name,
 			})
 			if n.Obj == nil {
