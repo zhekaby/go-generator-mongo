@@ -4,7 +4,7 @@ var writerUpdater = `
 
 type {{ .Typ }}Updater interface {
 	{{range .Fields}}
-	Set{{ .GoPath }}({{ .BsonProp }} {{ .Type }}) {{ $.Typ }}Updater
+	Set{{ .GoPath }}(v{{ .Prop }} {{ .Type }}) {{ $.Typ }}Updater
 	{{end}}
 }
 
@@ -23,8 +23,8 @@ func (u *{{ $.Name }}_updater) compile() bson.M {
 }
 
 {{range .Fields}}
-func (u *{{ $.Name }}_updater) Set{{ .GoPath }}({{ .BsonProp }} {{ .Type }}) {{ $.Typ }}Updater {
-	u.updates["{{ .BsonPath }}"] = {{ .BsonProp }}
+func (u *{{ $.Name }}_updater) Set{{ .GoPath }}(v{{ .Prop }} {{ .Type }}) {{ $.Typ }}Updater {
+	u.updates["{{ .BsonPath }}"] = v{{ .Prop }}
 	return u
 }
 {{end}}

@@ -13,8 +13,8 @@ services:
     healthcheck:
       test: test $$(echo "rs.initiate({_id:'mongowarapper-tests',members:[{_id:0,host:'db1:33001'},{_id:1,host:'db2:33002'}]}).ok || mongowarapper-tests.status().ok" | mongo --port 33001 --quiet) -eq 1
       interval: 10s
-      start_period: 1s
-  db2_mongowarapper_test_node:w
+      start_period: 0s
+  db2_mongowarapper_test_node:
     hostname: db2
     image: mongo:latest
     container_name: db2_mongowarapper_test_node

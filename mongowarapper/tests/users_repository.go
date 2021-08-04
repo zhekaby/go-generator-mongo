@@ -269,17 +269,17 @@ type UserChangeEvent struct {
 }
 
 type UserUpdater interface {
-	SetEmail(email string) UserUpdater
+	SetEmail(vEmail string) UserUpdater
 
-	SetProfile(profile Profile) UserUpdater
+	SetProfile(vProfile Profile) UserUpdater
 
-	SetProfileFirstName(first_name string) UserUpdater
+	SetProfileFirstName(vFirstName string) UserUpdater
 
-	SetProfileLastName(last_name string) UserUpdater
+	SetProfileLastName(vLastName string) UserUpdater
 
-	SetAddressCity(City string) UserUpdater
+	SetAddressCity(vCity string) UserUpdater
 
-	SetFinIncome(Income int64) UserUpdater
+	SetFinIncome(vIncome int64) UserUpdater
 }
 
 type users_updater struct {
@@ -296,32 +296,32 @@ func (u *users_updater) compile() bson.M {
 	return bson.M{"$set": u.updates}
 }
 
-func (u *users_updater) SetEmail(email string) UserUpdater {
-	u.updates["email"] = email
+func (u *users_updater) SetEmail(vEmail string) UserUpdater {
+	u.updates["email"] = vEmail
 	return u
 }
 
-func (u *users_updater) SetProfile(profile Profile) UserUpdater {
-	u.updates["profile"] = profile
+func (u *users_updater) SetProfile(vProfile Profile) UserUpdater {
+	u.updates["profile"] = vProfile
 	return u
 }
 
-func (u *users_updater) SetProfileFirstName(first_name string) UserUpdater {
-	u.updates["profile.first_name"] = first_name
+func (u *users_updater) SetProfileFirstName(vFirstName string) UserUpdater {
+	u.updates["profile.first_name"] = vFirstName
 	return u
 }
 
-func (u *users_updater) SetProfileLastName(last_name string) UserUpdater {
-	u.updates["profile.last_name"] = last_name
+func (u *users_updater) SetProfileLastName(vLastName string) UserUpdater {
+	u.updates["profile.last_name"] = vLastName
 	return u
 }
 
-func (u *users_updater) SetAddressCity(City string) UserUpdater {
-	u.updates["address.City"] = City
+func (u *users_updater) SetAddressCity(vCity string) UserUpdater {
+	u.updates["address.City"] = vCity
 	return u
 }
 
-func (u *users_updater) SetFinIncome(Income int64) UserUpdater {
-	u.updates["Fin.Income"] = Income
+func (u *users_updater) SetFinIncome(vIncome int64) UserUpdater {
+	u.updates["Fin.Income"] = vIncome
 	return u
 }

@@ -80,9 +80,9 @@ github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:25
 github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:250.46,251.12 1 0
 github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:294.35,298.2 1 1
 github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:300.42,302.2 1 1
-github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:305.60,308.2 2 1
-github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:310.65,313.2 2 1
+github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:305.61,308.2 2 1
+github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:310.66,313.2 2 1
 github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:315.76,318.2 2 0
 github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:320.74,323.2 2 0
-github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:325.65,328.2 2 1
-github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:330.64,333.2 2 1
+github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:325.66,328.2 2 1
+github.com/zhekaby/go-generator-mongo/mongowarapper/tests/users_repository.go:330.65,333.2 2 1
