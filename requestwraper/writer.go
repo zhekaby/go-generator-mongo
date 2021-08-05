@@ -45,5 +45,26 @@ func (w *writer) Write() error {
 
 func (d *writerData) write(f io.Writer) error {
 	template.Must(template.New("queue").Parse(writer_body_validator)).Execute(f, d)
+	for _, field := range d.structInfo.Fields {
+		for k, v := range field.Validations {
+			fmt.Fprintf(f, fmt.Sprintf("var requestwarapper_error_%s_%s_%s = struct {\n", d.structInfo.Name, field.NsCompact, k))
+			fmt.Fprintf(f, "	Key string `json:\"key\"`\n")
+			switch k {
+			case "max":
+				fmt.Fprintf(f, "	Value float64 `json:\"value\"`\n")
+				fmt.Fprintf(f, "}{\n")
+				fmt.Fprintf(f, fmt.Sprintf("	Value: %s,\n", v))
+			case "min":
+				fmt.Fprintf(f, "	Value float64 `json:\"value\"`\n")
+				fmt.Fprintf(f, "}{\n")
+				fmt.Fprintf(f, fmt.Sprintf("	Value: %s,\n", v))
+			default:
+				fmt.Fprintf(f, "}{\n")
+			}
+
+			fmt.Fprintf(f, fmt.Sprintf("	Key: \"%s\",\n", k))
+			fmt.Fprintf(f, "}\n")
+		}
+	}
 	return nil
 }

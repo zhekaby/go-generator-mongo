@@ -11,7 +11,7 @@ import (
 
 var packageValidator = validator.New()
 
-var DeviceCreateRequestParamsMap = map[string]string{
+var requestwarapper_deviceCreateRequestParamsMap = map[string]string{
 	"device.UserID":          "user_id",
 	"device.Locale":          "locale",
 	"device.Num":             "num",
@@ -30,7 +30,7 @@ var DeviceCreateRequestParamsMap = map[string]string{
 	"device.MyData.N":        "MyData.N",
 }
 
-func DeviceCreateRequestParamsValidator(next http.Handler) http.Handler {
+func deviceCreateRequestParamsValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body device
 		bytes, err := ioutil.ReadAll(r.Body)
@@ -50,12 +50,44 @@ func DeviceCreateRequestParamsValidator(next http.Handler) http.Handler {
 			verrs := err.(validator.ValidationErrors)
 			m := make(map[string][]interface{}, len(verrs))
 			for _, e := range verrs {
-				n := DeviceCreateRequestParamsMap[e.Namespace()]
+				n := requestwarapper_deviceCreateRequestParamsMap[e.Namespace()]
 				v, ok := m[n]
 				if !ok {
 					v = make([]interface{}, 0, 5)
 				}
-				v = append(v, printField(e))
+				if e.Tag() == "required" {
+					v = append(v, &requestwarapper_error_key_default{
+						Key: e.Tag(),
+					})
+					m[n] = v
+					continue
+				}
+				switch e.Namespace() {
+
+				case "device.Num":
+					switch e.Tag() {
+
+					case "max":
+						v = append(v, requestwarapper_error_deviceCreateRequestParams_deviceNum_max)
+					case "min":
+						v = append(v, requestwarapper_error_deviceCreateRequestParams_deviceNum_min)
+					}
+
+				case "device.NativePushToken":
+					switch e.Tag() {
+
+					case "required_without_all":
+						v = append(v, requestwarapper_error_deviceCreateRequestParams_deviceNativePushToken_required_without_all)
+					}
+
+				case "device.NativeVoIPToken":
+					switch e.Tag() {
+
+					case "required_without_all":
+						v = append(v, requestwarapper_error_deviceCreateRequestParams_deviceNativeVoIPToken_required_without_all)
+					}
+
+				}
 				m[n] = v
 			}
 			b, _ := json.Marshal(&requestwarapper_error_model{
@@ -68,22 +100,34 @@ func DeviceCreateRequestParamsValidator(next http.Handler) http.Handler {
 	})
 }
 
-func printField(e validator.FieldError) interface{} {
-	switch e.Tag() {
-	case "required":
-		return requestwarapper_error_required
-	default:
-		return &struct {
-		}{}
-	}
+var requestwarapper_error_deviceCreateRequestParams_deviceNum_min = struct {
+	Key   string  `json:"key"`
+	Value float64 `json:"value"`
+}{
+	Value: 4,
+	Key:   "min",
+}
+var requestwarapper_error_deviceCreateRequestParams_deviceNum_max = struct {
+	Key   string  `json:"key"`
+	Value float64 `json:"value"`
+}{
+	Value: 15,
+	Key:   "max",
+}
+var requestwarapper_error_deviceCreateRequestParams_deviceNativePushToken_required_without_all = struct {
+	Key string `json:"key"`
+}{
+	Key: "required_without_all",
+}
+var requestwarapper_error_deviceCreateRequestParams_deviceNativeVoIPToken_required_without_all = struct {
+	Key string `json:"key"`
+}{
+	Key: "required_without_all",
 }
 
 type requestwarapper_error_model struct {
 	Errors map[string][]interface{} `json:"errors"`
 }
-
-var requestwarapper_error_required = struct {
+type requestwarapper_error_key_default struct {
 	Key string `json:"key"`
-}{
-	Key: "required",
 }

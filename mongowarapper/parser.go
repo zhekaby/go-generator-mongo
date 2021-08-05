@@ -140,16 +140,6 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 				c.Fields = expandStruct(s)
 			}
 
-			//keys := strings.Split(reflect.StructTag(f.Tag.Value[1:len(f.Tag.Value)-1]).Get("json"), ",")
-			//res := &structProps{Name: v.name, QueryFields: make([]*QueryFieldProps, 0, 20)}
-			//if s, ok := n.Type.(*ast.StructType); ok {
-			//	for _, f := range s.Fields.List {
-			//		if f.Names[0].Name == "Body" {
-			//			star, ok := f.Type.(*ast.StarExpr)
-			//			if !ok {
-			//				panic("only star expression supported for Body. Use: Body *type")
-			//			}
-			//			res.BodyType = star.X.(*ast.Ident).Name
 			//		} else if f.Names[0].Name == "Query" {
 			//			star, ok := f.Type.(*ast.StarExpr)
 			//			if !ok {

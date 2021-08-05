@@ -1,7 +1,7 @@
 package main
 
 var writer_body_validator = `
-var {{ .Name }}Map = map[string]string{
+var requestwarapper_{{ .Name }}Map = map[string]string{
 	{{ range .Fields }}{{ if .JsonPath }}"{{ .Ns }}" :"{{ .JsonPath }}",{{ else }}"{{ .Ns }}" :"{{ .NsShort }}",{{ end }}
 	{{ end }}
 }
@@ -25,12 +25,27 @@ func {{ .Name }}Validator(next http.Handler) http.Handler {
 			verrs := err.(validator.ValidationErrors)
 			m := make(map[string][]interface{}, len(verrs))
 			for _, e := range verrs {
-				n := DeviceCreateRequestParamsMap[e.Namespace()]
+				n := requestwarapper_{{ $.Name }}Map[e.Namespace()]
 				v, ok := m[n]
 				if !ok {
 					v = make([]interface{}, 0, 5)
 				}
-				v = append(v, printField(e))
+				if e.Tag() == "required" {
+					v = append(v, &requestwarapper_error_key_default{
+						Key: e.Tag(),
+					})
+					m[n] = v
+					continue
+				}
+				switch e.Namespace() {
+				{{ range .Fields }}{{ $f := . }}{{if .Validations }}
+				case "{{ .Ns }}":
+					switch e.Tag() {
+					{{ range $key, $value := .Validations }}
+						case "{{ $key }}": v = append(v, requestwarapper_error_{{ $.Name }}_{{ $f.NsCompact }}_{{$key}}){{ end}}
+					}
+				{{ end}}{{ end }}
+				}
 				m[n] = v
 			}
 			b, _ := json.Marshal(&requestwarapper_error_model{

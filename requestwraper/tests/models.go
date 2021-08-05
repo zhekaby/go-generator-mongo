@@ -35,11 +35,11 @@ type data struct {
 	N string `validate:"required"`
 }
 
-// A DeviceCreateRequestParams model.
+// A deviceCreateRequestParams model.
 //
 // This is used for operations that want an Order as body of the request
 // swagger:parameters createDevice
-type DeviceCreateRequestParams struct {
+type deviceCreateRequestParams struct {
 	// The device data to submit.
 	//
 	// in: body

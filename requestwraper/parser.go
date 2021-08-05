@@ -60,6 +60,7 @@ func NewParser(in string) *Parser {
 }
 
 func (p *Parser) Parse() error {
+	os.Remove(fmt.Sprintf("%s/requestwrapper_validator_middleware.go", p.Dir))
 	var err error
 	if p.PkgPath, err = common.GetPkgPath(p.In, p.isDir); err != nil {
 		return err
@@ -213,7 +214,8 @@ func excludeTestFiles(fi os.FileInfo) bool {
 }
 
 type field struct {
-	Prop, Type, JsonProp, JsonPath, Ns, NsShort string
+	Prop, Type, JsonProp, JsonPath, Ns, NsShort, NsCompact string
+	Validations                                            map[string]string
 }
 
 func expandStruct(s *ast.StructType, ns string) []*field {
@@ -228,30 +230,32 @@ func fnWalk(prefix, goPrefix string, astFields []*ast.Field) []*field {
 	for _, f := range astFields {
 		tag := getTag(f.Tag, "json", f.Names[0].Name, 0)
 		bsonPath := prefix + tag
-		goPath := goPrefix + "." + f.Names[0].Name
-		idx := strings.IndexByte(goPath, byte('.'))
+		ns := goPrefix + "." + f.Names[0].Name
+		idx := strings.IndexByte(ns, byte('.'))
 		switch n := f.Type.(type) {
 		case *ast.Ident:
 
 			fields = append(fields, &field{
-				Prop:     f.Names[0].Name,
-				Ns:       goPath,
-				NsShort:  goPath[idx+1:],
-				JsonPath: bsonPath,
-				JsonProp: tag,
-				Type:     n.Name,
+				Prop:        f.Names[0].Name,
+				Ns:          ns,
+				NsShort:     ns[idx+1:],
+				NsCompact:   strings.Replace(ns, ".", "", -1),
+				JsonPath:    bsonPath,
+				JsonProp:    tag,
+				Type:        n.Name,
+				Validations: getValidateRules(f.Tag),
 			})
 			if n.Obj == nil {
 				continue
 			}
 			if t, ok := n.Obj.Decl.(*ast.TypeSpec).Type.(*ast.StructType); ok {
-				fields = append(fields, fnWalk(bsonPath, goPath, t.Fields.List)...)
+				fields = append(fields, fnWalk(bsonPath, ns, t.Fields.List)...)
 			}
 		case *ast.StructType:
-			fields = append(fields, fnWalk(bsonPath, goPath, n.Fields.List)...)
+			fields = append(fields, fnWalk(bsonPath, ns, n.Fields.List)...)
 		case *ast.StarExpr:
 			if t, ok := n.X.(*ast.Ident).Obj.Decl.(*ast.TypeSpec).Type.(*ast.StructType); ok {
-				fields = append(fields, fnWalk(bsonPath, goPath, t.Fields.List)...)
+				fields = append(fields, fnWalk(bsonPath, ns, t.Fields.List)...)
 			}
 
 		default:
@@ -270,4 +274,24 @@ func getTag(tag *ast.BasicLit, name, defaultValue string, pos int) string {
 		return defaultValue
 	}
 	return keys[pos]
+}
+
+func getValidateRules(tag *ast.BasicLit) map[string]string {
+	if tag == nil {
+		return nil
+	}
+	m := make(map[string]string, 5)
+	keys := strings.Split(reflect.StructTag(tag.Value[1:len(tag.Value)-1]).Get("validate"), ",")
+	for _, k := range keys {
+		if k == "" || k == "required" {
+			continue
+		}
+		idx := strings.IndexByte(k, '=')
+		if idx > 0 {
+			m[k[:idx]] = k[idx+1:]
+		} else {
+			m[k] = ""
+		}
+	}
+	return m
 }
