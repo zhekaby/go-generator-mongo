@@ -12,21 +12,13 @@ import (
 var packageValidator = validator.New()
 
 var requestwarapper_deviceCreateRequestParamsMap = map[string]string{
-	"item.UserID":          "user_id",
-	"item.Locale":          "locale",
-	"item.Num":             "num",
-	"item.Type":            "type",
-	"item.NativeVoIPToken": "native_voip_token",
-	"item.Carrier":         "carrier",
-	"item.Mcc":             "mcc",
-	"item.Mnc":             "mnc",
-	"item.OsVersion":       "os_version",
-	"item.BuildNumber":     "build_number",
-	"item.AppVersion":      "app_version",
-	"item.CountryCode":     "country_code",
-	"item.PhoneNumber":     "phone_number",
-	"item.Mode":            "mode",
-	"item.MyData.N":        "MyData.N",
+	"item.UserID":   "user_id",
+	"item.Locale":   "locale",
+	"item.Num":      "num",
+	"item.Type":     "type",
+	"item.Assn":     "assn",
+	"item.Assn1":    "assn1",
+	"item.MyData.N": "MyData.N",
 }
 
 func deviceCreateRequestParamsValidator(next http.Handler) http.Handler {
@@ -72,11 +64,18 @@ func deviceCreateRequestParamsValidator(next http.Handler) http.Handler {
 						v = append(v, requestwarapper_error_deviceCreateRequestParams_itemNum_min)
 					}
 
-				case "item.NativeVoIPToken":
+				case "item.Assn":
 					switch e.Tag() {
 
 					case "required_without_all":
-						v = append(v, requestwarapper_error_deviceCreateRequestParams_itemNativeVoIPToken_required_without_all)
+						v = append(v, requestwarapper_error_deviceCreateRequestParams_itemAssn_required_without_all)
+					}
+
+				case "item.Assn1":
+					switch e.Tag() {
+
+					case "required_without_all":
+						v = append(v, requestwarapper_error_deviceCreateRequestParams_itemAssn1_required_without_all)
 					}
 
 				}
@@ -106,7 +105,12 @@ var requestwarapper_error_deviceCreateRequestParams_itemNum_max = struct {
 	Value: 15,
 	Key:   "max",
 }
-var requestwarapper_error_deviceCreateRequestParams_itemNativeVoIPToken_required_without_all = struct {
+var requestwarapper_error_deviceCreateRequestParams_itemAssn_required_without_all = struct {
+	Key string `json:"key"`
+}{
+	Key: "required_without_all",
+}
+var requestwarapper_error_deviceCreateRequestParams_itemAssn1_required_without_all = struct {
 	Key string `json:"key"`
 }{
 	Key: "required_without_all",

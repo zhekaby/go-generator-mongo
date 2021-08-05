@@ -4,7 +4,7 @@ build:
 	CGO_ENABLED=0 go build -a -ldflags="-w -s -X main.VERSION=`git rev-parse HEAD | cut -c1-8`" -o ~/go/bin/requestwraper
 
 generate:
-	go generate tests/...
+	easyjson tests/models.go
 	go run . tests/
 
 test:

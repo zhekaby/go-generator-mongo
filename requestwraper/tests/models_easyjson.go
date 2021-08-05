@@ -44,26 +44,10 @@ func easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(in
 			out.Num = int(in.Int())
 		case "type":
 			out.Type = string(in.String())
-		case "native_voip_token":
-			out.NativeVoIPToken = string(in.String())
-		case "carrier":
-			out.Carrier = string(in.String())
-		case "mcc":
-			out.Mcc = string(in.String())
-		case "mnc":
-			out.Mnc = string(in.String())
-		case "os_version":
-			out.OsVersion = string(in.String())
-		case "build_number":
-			out.BuildNumber = string(in.String())
-		case "app_version":
-			out.AppVersion = string(in.String())
-		case "country_code":
-			out.CountryCode = string(in.String())
-		case "phone_number":
-			out.PhoneNumber = string(in.String())
-		case "mode":
-			out.Mode = string(in.String())
+		case "assn":
+			out.Assn = string(in.String())
+		case "assn1":
+			out.Assn1 = string(in.String())
 		case "flags":
 			if in.IsNull() {
 				in.Skip()
@@ -140,54 +124,14 @@ func easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(ou
 		out.String(string(in.Type))
 	}
 	{
-		const prefix string = ",\"native_voip_token\":"
+		const prefix string = ",\"assn\":"
 		out.RawString(prefix)
-		out.String(string(in.NativeVoIPToken))
+		out.String(string(in.Assn))
 	}
-	if in.Carrier != "" {
-		const prefix string = ",\"carrier\":"
+	{
+		const prefix string = ",\"assn1\":"
 		out.RawString(prefix)
-		out.String(string(in.Carrier))
-	}
-	if in.Mcc != "" {
-		const prefix string = ",\"mcc\":"
-		out.RawString(prefix)
-		out.String(string(in.Mcc))
-	}
-	if in.Mnc != "" {
-		const prefix string = ",\"mnc\":"
-		out.RawString(prefix)
-		out.String(string(in.Mnc))
-	}
-	if in.OsVersion != "" {
-		const prefix string = ",\"os_version\":"
-		out.RawString(prefix)
-		out.String(string(in.OsVersion))
-	}
-	if in.BuildNumber != "" {
-		const prefix string = ",\"build_number\":"
-		out.RawString(prefix)
-		out.String(string(in.BuildNumber))
-	}
-	if in.AppVersion != "" {
-		const prefix string = ",\"app_version\":"
-		out.RawString(prefix)
-		out.String(string(in.AppVersion))
-	}
-	if in.CountryCode != "" {
-		const prefix string = ",\"country_code\":"
-		out.RawString(prefix)
-		out.String(string(in.CountryCode))
-	}
-	if in.PhoneNumber != "" {
-		const prefix string = ",\"phone_number\":"
-		out.RawString(prefix)
-		out.String(string(in.PhoneNumber))
-	}
-	if in.Mode != "" {
-		const prefix string = ",\"mode\":"
-		out.RawString(prefix)
-		out.String(string(in.Mode))
+		out.String(string(in.Assn1))
 	}
 	{
 		const prefix string = ",\"flags\":"
@@ -307,8 +251,8 @@ func easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests1(i
 		switch key {
 		case "type":
 			out.Type = string(in.String())
-		case "event":
-			out.Event = string(in.String())
+		case "value":
+			out.Value = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -329,9 +273,9 @@ func easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests1(o
 		out.String(string(in.Type))
 	}
 	{
-		const prefix string = ",\"event\":"
+		const prefix string = ",\"value\":"
 		out.RawString(prefix)
-		out.String(string(in.Event))
+		out.String(string(in.Value))
 	}
 	out.RawByte('}')
 }
