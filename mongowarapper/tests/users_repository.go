@@ -270,15 +270,10 @@ type UserChangeEvent struct {
 
 type UserUpdater interface {
 	SetEmail(vEmail string) UserUpdater
-
 	SetProfile(vProfile Profile) UserUpdater
-
 	SetProfileFirstName(vFirstName string) UserUpdater
-
 	SetProfileLastName(vLastName string) UserUpdater
-
 	SetAddressCity(vCity string) UserUpdater
-
 	SetFinIncome(vIncome int64) UserUpdater
 }
 
