@@ -17,7 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(in *jlexer.Lexer, out *device) {
+func easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(in *jlexer.Lexer, out *item) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -40,10 +40,10 @@ func easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(in
 			out.UserID = string(in.String())
 		case "locale":
 			out.Locale = string(in.String())
+		case "num":
+			out.Num = int(in.Int())
 		case "type":
 			out.Type = string(in.String())
-		case "native_push_token":
-			out.NativePushToken = string(in.String())
 		case "native_voip_token":
 			out.NativeVoIPToken = string(in.String())
 		case "carrier":
@@ -115,7 +115,7 @@ func easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(in
 		in.Consumed()
 	}
 }
-func easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(out *jwriter.Writer, in device) {
+func easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(out *jwriter.Writer, in item) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -130,14 +130,14 @@ func easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(ou
 		out.String(string(in.Locale))
 	}
 	{
+		const prefix string = ",\"num\":"
+		out.RawString(prefix)
+		out.Int(int(in.Num))
+	}
+	{
 		const prefix string = ",\"type\":"
 		out.RawString(prefix)
 		out.String(string(in.Type))
-	}
-	{
-		const prefix string = ",\"native_push_token\":"
-		out.RawString(prefix)
-		out.String(string(in.NativePushToken))
 	}
 	{
 		const prefix string = ",\"native_voip_token\":"
@@ -222,26 +222,26 @@ func easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(ou
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v device) MarshalJSON() ([]byte, error) {
+func (v item) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v device) MarshalEasyJSON(w *jwriter.Writer) {
+func (v item) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *device) UnmarshalJSON(data []byte) error {
+func (v *item) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *device) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *item) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests(l, v)
 }
 func easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests2(in *jlexer.Lexer, out *data) {
@@ -263,6 +263,8 @@ func easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests2(i
 			continue
 		}
 		switch key {
+		case "N":
+			out.N = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -277,6 +279,11 @@ func easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests2(o
 	out.RawByte('{')
 	first := true
 	_ = first
+	{
+		const prefix string = ",\"N\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.N))
+	}
 	out.RawByte('}')
 }
 func easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests1(in *jlexer.Lexer, out *flag) {

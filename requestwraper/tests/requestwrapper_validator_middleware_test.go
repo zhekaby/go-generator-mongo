@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"encoding/json"
 	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 func TestDeviceCreateRequestParamsValidator(t *testing.T) {
 	Convey(t.Name(), t, func() {
 		Convey("InvalidModel", func() {
-			d := &device{
+			d := &item{
 				UserID: "userid",
 				Locale: "ro-ro",
 				MyData: &data{},
@@ -26,6 +27,16 @@ func TestDeviceCreateRequestParamsValidator(t *testing.T) {
 			b, err := ioutil.ReadAll(rr.Body)
 			So(err, ShouldBeNil)
 			t.Logf("response: %s", string(b))
+			var resp requestwarapper_error_model
+			err = json.Unmarshal(b, &resp)
+			So(err, ShouldBeNil)
+			So(resp.Errors, ShouldNotBeNil)
+			e := resp.Errors
+			So(len(e), ShouldBeGreaterThan, 0)
+			So(e, ShouldContainKey, "num")
+			So(e, ShouldContainKey, "type")
+			So(e, ShouldContainKey, "native_voip_token")
+			So(e, ShouldContainKey, "MyData.N")
 		})
 	})
 }

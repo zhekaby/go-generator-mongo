@@ -7,16 +7,14 @@ type flag struct {
 	Event string `json:"event"`
 }
 
-// device model
+// item model
 // easyjson:json
 // swagger:model createDevice
-type device struct {
-	UserID string `json:"user_id" validate:"required"`
-	Locale string `json:"locale,omitempty"`
-	Num    int    `json:"num" validate:"min=4,max=15"`
-	// required: true
+type item struct {
+	UserID          string  `json:"user_id" validate:"required"`
+	Locale          string  `json:"locale,omitempty"`
+	Num             int     `json:"num" validate:"min=4,max=15"`
 	Type            string  `json:"type" validate:"required"`
-	NativePushToken string  `json:"native_push_token" validate:"required_without_all=NativeVoIPToken"`
 	NativeVoIPToken string  `json:"native_voip_token" validate:"required_without_all=NativePushToken"`
 	Carrier         string  `json:"carrier,omitempty"`
 	Mcc             string  `json:"mcc,omitempty"`
@@ -40,11 +38,11 @@ type data struct {
 // This is used for operations that want an Order as body of the request
 // swagger:parameters createDevice
 type deviceCreateRequestParams struct {
-	// The device data to submit.
+	// The item data to submit.
 	//
 	// in: body
 	// required: true
-	Body *device `json:"device"`
+	Body *item `json:"item"`
 
 	Header
 }
