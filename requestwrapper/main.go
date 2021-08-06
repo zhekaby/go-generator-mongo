@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/zhekaby/go-generator-mongo/common"
 	"os"
 )
 
@@ -16,7 +17,7 @@ func main() {
 	}
 
 	for _, file := range files {
-		p := NewParser(file)
+		p := common.NewParser(file)
 		if err := p.Parse(); err != nil {
 			fmt.Println(err)
 			os.Exit(1)

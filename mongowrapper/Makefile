@@ -1,18 +1,18 @@
-all: generate test build
+all: run_docker generate wait_docker test stop_docker build
 
 run_docker:
 	docker-compose down --remove-orphans && docker-compose up -d
 
 wait_docker:
 	echo 'waiting replica is up...'
-	while ! docker ps | grep mongowarapper | grep '(healthy)'; do sleep 1; done
-	sleep 5
+	while ! docker ps | grep mongowrapper | grep '(healthy)'; do sleep 1; done
+	sleep 8
 
 stop_docker:
 	docker-compose down --remove-orphans
 
 generate:
-	go run . --cs_var=MONGODB_CONNECTION_STRING --cs='mongodb://db1:33001,db2:33002/ipo?replicaSet=mongowarapper-tests&readPreference=primaryPreferred' tests/
+	go run . --cs_var=MONGODB_CONNECTION_STRING --cs='mongodb://db1:33001,db2:33002/ipo?replicaSet=mongowrapper-tests&readPreference=primaryPreferred' tests/
 
 build:
 	CGO_ENABLED=0 go build -a -ldflags="-w -s -X main.VERSION=`git rev-parse HEAD | cut -c1-8`" -o ~/go/bin/mongowrapper

@@ -21,7 +21,7 @@ func TestParseUser(t *testing.T) {
 	Convey(t.Name(), t, func() {
 		fset := token.NewFileSet()
 		f, _ := parser.ParseFile(fset, "parser_test.go", nil, parser.ParseComments)
-		fields := make([]field, 0, 100)
+		fields := make([]Field, 0, 100)
 		for _, d := range f.Decls {
 			if common.HasComment(d, "test_user") {
 				deep(d, "", "", "", "", &fields)

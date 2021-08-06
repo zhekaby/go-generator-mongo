@@ -2,21 +2,22 @@ package main
 
 import (
 	"fmt"
+	"github.com/zhekaby/go-generator-mongo/common"
 	"io"
 	"os"
 	"text/template"
 )
 
 type writer struct {
-	parser *Parser
+	parser *common.Parser
 }
 
 type writerData struct {
-	*Parser
-	*structInfo
+	*common.Parser
+	*common.StructInfo
 }
 
-func NewWriter(p *Parser) *writer {
+func NewWriter(p *common.Parser) *writer {
 	return &writer{p}
 }
 
@@ -33,7 +34,7 @@ func (w *writer) Write() error {
 	for _, s := range w.parser.Structs {
 		d := &writerData{
 			Parser:     w.parser,
-			structInfo: s,
+			StructInfo: s,
 		}
 
 		d.write(f)
@@ -45,9 +46,9 @@ func (w *writer) Write() error {
 
 func (d *writerData) write(f io.Writer) error {
 	template.Must(template.New("queue").Parse(writer_body_validator)).Execute(f, d)
-	for _, field := range d.structInfo.Fields {
+	for _, field := range d.StructInfo.Fields {
 		for k, v := range field.Validations {
-			fmt.Fprintf(f, fmt.Sprintf("var requestwarapper_error_%s_%s_%s = struct {\n", d.structInfo.Name, field.NsCompact, k))
+			fmt.Fprintf(f, fmt.Sprintf("var requestwarapper_error_%s_%s_%s = struct {\n", d.StructInfo.Name, field.NsCompact, k))
 			fmt.Fprintf(f, "	Key string `json:\"key\"`\n")
 			switch k {
 			case "max":

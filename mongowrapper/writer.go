@@ -2,30 +2,31 @@ package main
 
 import (
 	"fmt"
+	"github.com/zhekaby/go-generator-mongo/common"
 	"os"
 	"text/template"
 )
 
 type writer struct {
 	Cs, CsVar, DbVar string
-	*Parser
-	*collection
+	*common.Parser
+	*common.Collection
 }
 
-func NewWriter(cs, csVar, dbVar string, p *Parser) *writer {
+func NewWriter(cs, csVar, dbVar string, p *common.Parser) *writer {
 	return &writer{Cs: cs, CsVar: csVar, DbVar: dbVar, Parser: p}
 
 }
 
 func (w *writer) Write() {
 	for _, c := range w.Collections {
-		w.collection = c
+		w.Collection = c
 		w.write()
 	}
 }
 
 func (w *writer) write() error {
-	f, err := os.Create(fmt.Sprintf("%s/%s_repository.go", w.Dir, w.collection.Name))
+	f, err := os.Create(fmt.Sprintf("%s/%s_repository.go", w.Dir, w.Collection.Name))
 	if err != nil {
 		return err
 	}

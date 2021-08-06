@@ -1,9 +1,8 @@
-package main
+package common
 
 import (
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/zhekaby/go-generator-mongo/common"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -11,31 +10,37 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strings"
+)
+
+var (
+	structCommentMongo   = "mongowrapper:Collection"
+	structCommentSwagger = "swagger:parameters"
+	bodyComment          = "in: body"
 )
 
 type Parser struct {
 	In, Dir, PkgPath, PkgName string
 	isDir                     bool
-	Collections               []*collection
-	Structs                   []*structInfo
+	Collections               []*Collection
+	Structs                   []*StructInfo
 	Decls                     map[string]*ast.StructType
 }
 
-type structInfo struct {
+type StructInfo struct {
 	Name         string
 	Body         *ast.StructType
 	BodyTypeName string
-	Fields       []field
+	Fields       []Field
 }
-
-type collection struct {
+type Field struct {
+	Prop, Type, JsonProp, JsonPath, BsonProp, BsonPath, GoPath, Ns, NsShort, NsCompact string
+	Validations                                                                        map[string]string
+}
+type Collection struct {
 	Typ, Name string
-	Fields    []field
-}
-
-type field struct {
-	Prop, Type, BsonProp, BsonPath, GoPath string
+	Fields    []Field
 }
 
 type visitor struct {
@@ -43,12 +48,6 @@ type visitor struct {
 
 	name string
 }
-
-var (
-	structCommentMongo   = "mongowrapper:collection"
-	structCommentSwagger = "swagger:parameters"
-	bodyComment          = "in: body"
-)
 
 func NewParser(in string) *Parser {
 	root, _ := os.Getwd()
@@ -61,8 +60,8 @@ func NewParser(in string) *Parser {
 
 	p := &Parser{
 		In: fin, isDir: fInfo.IsDir(),
-		Structs:     make([]*structInfo, 0, 50),
-		Collections: make([]*collection, 0, 50),
+		Structs:     make([]*StructInfo, 0, 50),
+		Collections: make([]*Collection, 0, 50),
 		Decls:       make(map[string]*ast.StructType, 200),
 	}
 
@@ -76,7 +75,7 @@ func NewParser(in string) *Parser {
 
 func (p *Parser) Parse() error {
 	var err error
-	if p.PkgPath, err = common.GetPkgPath(p.In, p.isDir); err != nil {
+	if p.PkgPath, err = GetPkgPath(p.In, p.isDir); err != nil {
 		return err
 	}
 
@@ -94,7 +93,7 @@ func (p *Parser) Parse() error {
 
 		for _, pckg := range packages {
 			for _, f := range pckg.Files {
-				common.FillDecls(f, p.Decls)
+				FillDecls(f, p.Decls)
 			}
 			ast.Walk(&visitor{Parser: p}, pckg)
 		}
@@ -104,7 +103,7 @@ func (p *Parser) Parse() error {
 		if err != nil {
 			return err
 		}
-		common.FillDecls(f, p.Decls)
+		FillDecls(f, p.Decls)
 		ast.Walk(&visitor{Parser: p}, f)
 	}
 
@@ -144,9 +143,9 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 			v.name = n.Name.String()
 			fmt.Printf("parsing %s\n", v.name)
 
-			fields := make([]field, 0, 100)
-			deep(n.Type, "", "", "", "", &fields)
-			v.Parser.Collections = append(v.Parser.Collections, &collection{
+			fields := make([]Field, 0, 100)
+			deep(n.Type, "", "", "", "", "", "", "", "", &fields)
+			v.Parser.Collections = append(v.Parser.Collections, &Collection{
 				Typ:    v.name,
 				Name:   collectionName,
 				Fields: fields,
@@ -175,9 +174,9 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 							}
 						}
 						name := ident.Name
-						fields := make([]field, 0, 100)
-						deep(st, "", "", "", "", &fields)
-						v.Structs = append(v.Structs, &structInfo{
+						fields := make([]Field, 0, 100)
+						deep(st, "", "", "", "", "", "", name, "", &fields)
+						v.Structs = append(v.Structs, &StructInfo{
 							Name:         n.Name.Name,
 							Body:         st,
 							BodyTypeName: name,
@@ -247,14 +246,14 @@ func excludeTestFiles(fi os.FileInfo) bool {
 	return !strings.HasSuffix(fi.Name(), "_test.go")
 }
 
-func deep(n ast.Node, fieldName, tag, bsonPrefix, goPrefix string, fields *[]field) {
+func deep(n ast.Node, fieldName, jsonTag, jsonPrefix, bsonTag, bsonPrefix, goPrefix, ns, tag string, fields *[]Field) {
 	switch n := n.(type) {
 	case *ast.TypeSpec:
-		switch ns := n.Type.(type) {
+		switch ts := n.Type.(type) {
 		case *ast.StarExpr:
-			deep(ns.X, "", "", bsonPrefix, goPrefix, fields)
+			deep(ts.X, "", "", "", "", bsonPrefix, goPrefix, ns, "", fields)
 		case *ast.StructType:
-			deep(ns, "", "", bsonPrefix, goPrefix, fields)
+			deep(ts, "", "", "", "", bsonPrefix, goPrefix, ns, "", fields)
 		default:
 			return
 		}
@@ -262,7 +261,7 @@ func deep(n ast.Node, fieldName, tag, bsonPrefix, goPrefix string, fields *[]fie
 		for _, nc := range n.Specs {
 			switch nct := nc.(type) {
 			case *ast.TypeSpec:
-				deep(nc, nct.Name.Name, tag, bsonPrefix, goPrefix, fields)
+				deep(nc, nct.Name.Name, jsonTag, jsonPrefix, bsonTag, bsonPrefix, goPrefix, ns, "", fields)
 
 			}
 		}
@@ -270,23 +269,27 @@ func deep(n ast.Node, fieldName, tag, bsonPrefix, goPrefix string, fields *[]fie
 		if len(bsonPrefix) > 0 {
 			bsonPrefix += "."
 		}
+		if len(jsonPrefix) > 0 {
+			jsonPrefix += "."
+		}
 		for _, f := range n.Fields.List {
-			tag := common.GetTag(f.Tag, "bson", f.Names[0].Name, 0)
+			bsonTag := GetTag(f.Tag, "bson", f.Names[0].Name, 0)
+			jsonTag := GetTag(f.Tag, "json", f.Names[0].Name, 0)
 			switch ss := f.Type.(type) {
 			case *ast.StructType:
-				deep(ss, f.Names[0].Name, tag, bsonPrefix+tag, goPrefix+f.Names[0].Name, fields)
+				deep(ss, f.Names[0].Name, jsonTag, jsonPrefix+jsonTag, bsonTag, bsonPrefix+bsonTag, goPrefix+f.Names[0].Name, ns, f.Tag.Value, fields)
 			case *ast.StarExpr:
 				if ident, ok := ss.X.(*ast.Ident); ok {
 					if ident.Obj != nil {
 						if ts, ok := ident.Obj.Decl.(*ast.TypeSpec); ok {
-							deep(ts.Type, f.Names[0].Name, tag, bsonPrefix+tag, goPrefix+f.Names[0].Name, fields)
+							deep(ts.Type, f.Names[0].Name, jsonTag, jsonPrefix+jsonTag, bsonTag, bsonPrefix+bsonTag, goPrefix+f.Names[0].Name, ns+"."+f.Names[0].Name, f.Tag.Value, fields)
 						}
 					} else {
-						deep(f.Type, f.Names[0].Name, tag, bsonPrefix, goPrefix, fields)
+						deep(f.Type, f.Names[0].Name, jsonTag, jsonPrefix, bsonTag, bsonPrefix, goPrefix, ns, f.Tag.Value, fields)
 					}
 				}
 			default:
-				deep(f.Type, f.Names[0].Name, tag, bsonPrefix, goPrefix, fields)
+				deep(f.Type, f.Names[0].Name, jsonTag, jsonPrefix, bsonTag, bsonPrefix, goPrefix, ns, f.Tag.Value, fields)
 			}
 
 		}
@@ -297,12 +300,20 @@ func deep(n ast.Node, fieldName, tag, bsonPrefix, goPrefix string, fields *[]fie
 		} else {
 			typ = n.Name
 		}
-		f := &field{
-			Prop:     fieldName,
-			GoPath:   goPrefix + fieldName,
-			BsonPath: bsonPrefix + tag,
-			BsonProp: tag,
-			Type:     typ,
+		ns += "." + fieldName
+		idx := strings.IndexByte(ns, byte('.'))
+		f := &Field{
+			Prop:        fieldName,
+			GoPath:      goPrefix + fieldName,
+			JsonProp:    jsonTag,
+			JsonPath:    jsonPrefix + jsonTag,
+			BsonProp:    bsonTag,
+			BsonPath:    bsonPrefix + bsonTag,
+			Type:        typ,
+			Ns:          ns,
+			NsShort:     ns[idx+1:],
+			NsCompact:   strings.Replace(ns, ".", "", -1),
+			Validations: getValidateRules(tag),
 		}
 		*fields = append(*fields, *f)
 	case *ast.SelectorExpr:
@@ -312,18 +323,46 @@ func deep(n ast.Node, fieldName, tag, bsonPrefix, goPrefix string, fields *[]fie
 				typ = e.Name + "."
 			}
 		}
-		f := &field{
-			Prop:     fieldName,
-			GoPath:   goPrefix + fieldName,
-			BsonPath: bsonPrefix + tag,
-			BsonProp: tag,
-			Type:     typ + n.Sel.Name,
+		ns := goPrefix + "." + fieldName
+		idx := strings.IndexByte(ns, byte('.'))
+		f := &Field{
+			Prop:        fieldName,
+			GoPath:      goPrefix + fieldName,
+			JsonProp:    jsonTag,
+			JsonPath:    jsonPrefix + jsonTag,
+			BsonProp:    bsonTag,
+			BsonPath:    bsonPrefix + bsonTag,
+			Type:        typ + n.Sel.Name,
+			Ns:          ns,
+			NsShort:     ns[idx+1:],
+			NsCompact:   strings.Replace(ns, ".", "", -1),
+			Validations: getValidateRules(tag),
 		}
 		*fields = append(*fields, *f)
 		break
 	case *ast.StarExpr:
-		deep(n.X, fieldName, tag, bsonPrefix, goPrefix, fields)
+		deep(n.X, fieldName, jsonTag, jsonPrefix, bsonTag, bsonPrefix, goPrefix, ns, tag, fields)
 		break
 	default:
 	}
+}
+
+func getValidateRules(tag string) map[string]string {
+	if tag == "" {
+		return nil
+	}
+	m := make(map[string]string, 5)
+	keys := strings.Split(reflect.StructTag(tag[1:len(tag)-1]).Get("validate"), ",")
+	for _, k := range keys {
+		if k == "" || k == "required" {
+			continue
+		}
+		idx := strings.IndexByte(k, '=')
+		if idx > 0 {
+			m[k[:idx]] = k[idx+1:]
+		} else {
+			m[k] = ""
+		}
+	}
+	return m
 }

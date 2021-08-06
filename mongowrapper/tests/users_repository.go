@@ -41,7 +41,7 @@ func NewUserRepositoryDefault(ctx context.Context) UserRepository {
 	cs := os.Getenv("MONGODB_CONNECTION_STRING")
 
 	if cs == "" {
-		cs = "mongodb://db1:33001,db2:33002/ipo?replicaSet=mongowarapper-tests&readPreference=primaryPreferred"
+		cs = "mongodb://db1:33001,db2:33002/ipo?replicaSet=mongowrapper-tests&readPreference=primaryPreferred"
 	}
 
 	return NewUserRepository(ctx, cs)
