@@ -20,12 +20,13 @@ func main() {
 	}
 
 	for _, file := range files {
-		p := NewParser(*cs, *csVar, *dbVar, file)
+		p := NewParser(file)
 		if err := p.Parse(); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		w := NewWriter(p)
+		w := NewWriter(*cs, *csVar, *dbVar, p)
+
 		w.Write()
 	}
 

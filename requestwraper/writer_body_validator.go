@@ -54,7 +54,7 @@ func {{ .Name }}Validator(next http.Handler) http.Handler {
 			w.Write(b)
 			return
 		}
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), "body", &body)))
 	})
 }
 `

@@ -1,4 +1,4 @@
-all: run_docker generate wait_docker test stop_docker build
+all: generate test build
 
 run_docker:
 	docker-compose down --remove-orphans && docker-compose up -d

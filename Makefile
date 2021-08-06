@@ -1,3 +1,3 @@
 all:
-	cd mongowarapper && make
+	cd mongowrapper && make
 	cd requestwraper && make

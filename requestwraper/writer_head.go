@@ -1,6 +1,7 @@
 package main
 
 var writerHead = `import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/go-playground/validator/v10"

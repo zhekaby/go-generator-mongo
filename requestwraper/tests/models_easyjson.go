@@ -279,3 +279,211 @@ func easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests1(o
 	}
 	out.RawByte('}')
 }
+func easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests3(in *jlexer.Lexer, out *device) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "user_id":
+			out.UserID = string(in.String())
+		case "locale":
+			out.Locale = string(in.String())
+		case "type":
+			out.Type = string(in.String())
+		case "native_push_token":
+			out.NativePushToken = string(in.String())
+		case "native_voip_token":
+			out.NativeVoIPToken = string(in.String())
+		case "carrier":
+			out.Carrier = string(in.String())
+		case "mcc":
+			out.Mcc = string(in.String())
+		case "mnc":
+			out.Mnc = string(in.String())
+		case "os_version":
+			out.OsVersion = string(in.String())
+		case "build_number":
+			out.BuildNumber = string(in.String())
+		case "app_version":
+			out.AppVersion = string(in.String())
+		case "country_code":
+			out.CountryCode = string(in.String())
+		case "phone_number":
+			out.PhoneNumber = string(in.String())
+		case "mode":
+			out.Mode = string(in.String())
+		case "flags":
+			if in.IsNull() {
+				in.Skip()
+				out.Flags = nil
+			} else {
+				in.Delim('[')
+				if out.Flags == nil {
+					if !in.IsDelim(']') {
+						out.Flags = make([]*flag, 0, 8)
+					} else {
+						out.Flags = []*flag{}
+					}
+				} else {
+					out.Flags = (out.Flags)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v4 *flag
+					if in.IsNull() {
+						in.Skip()
+						v4 = nil
+					} else {
+						if v4 == nil {
+							v4 = new(flag)
+						}
+						easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests1(in, v4)
+					}
+					out.Flags = append(out.Flags, v4)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests3(out *jwriter.Writer, in device) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"user_id\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.UserID))
+	}
+	if in.Locale != "" {
+		const prefix string = ",\"locale\":"
+		out.RawString(prefix)
+		out.String(string(in.Locale))
+	}
+	{
+		const prefix string = ",\"type\":"
+		out.RawString(prefix)
+		out.String(string(in.Type))
+	}
+	{
+		const prefix string = ",\"native_push_token\":"
+		out.RawString(prefix)
+		out.String(string(in.NativePushToken))
+	}
+	{
+		const prefix string = ",\"native_voip_token\":"
+		out.RawString(prefix)
+		out.String(string(in.NativeVoIPToken))
+	}
+	if in.Carrier != "" {
+		const prefix string = ",\"carrier\":"
+		out.RawString(prefix)
+		out.String(string(in.Carrier))
+	}
+	if in.Mcc != "" {
+		const prefix string = ",\"mcc\":"
+		out.RawString(prefix)
+		out.String(string(in.Mcc))
+	}
+	if in.Mnc != "" {
+		const prefix string = ",\"mnc\":"
+		out.RawString(prefix)
+		out.String(string(in.Mnc))
+	}
+	if in.OsVersion != "" {
+		const prefix string = ",\"os_version\":"
+		out.RawString(prefix)
+		out.String(string(in.OsVersion))
+	}
+	if in.BuildNumber != "" {
+		const prefix string = ",\"build_number\":"
+		out.RawString(prefix)
+		out.String(string(in.BuildNumber))
+	}
+	if in.AppVersion != "" {
+		const prefix string = ",\"app_version\":"
+		out.RawString(prefix)
+		out.String(string(in.AppVersion))
+	}
+	if in.CountryCode != "" {
+		const prefix string = ",\"country_code\":"
+		out.RawString(prefix)
+		out.String(string(in.CountryCode))
+	}
+	if in.PhoneNumber != "" {
+		const prefix string = ",\"phone_number\":"
+		out.RawString(prefix)
+		out.String(string(in.PhoneNumber))
+	}
+	if in.Mode != "" {
+		const prefix string = ",\"mode\":"
+		out.RawString(prefix)
+		out.String(string(in.Mode))
+	}
+	{
+		const prefix string = ",\"flags\":"
+		out.RawString(prefix)
+		if in.Flags == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+			out.RawString("null")
+		} else {
+			out.RawByte('[')
+			for v5, v6 := range in.Flags {
+				if v5 > 0 {
+					out.RawByte(',')
+				}
+				if v6 == nil {
+					out.RawString("null")
+				} else {
+					easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests1(out, *v6)
+				}
+			}
+			out.RawByte(']')
+		}
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v device) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests3(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v device) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonD2b7633eEncodeGithubComZhekabyGoGeneratorMongoRequestwraperTests3(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *device) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests3(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *device) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonD2b7633eDecodeGithubComZhekabyGoGeneratorMongoRequestwraperTests3(l, v)
+}
