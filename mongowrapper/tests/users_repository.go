@@ -39,26 +39,27 @@ type usersRepository struct {
 
 func NewUserRepositoryDefault(ctx context.Context) UserRepository {
 	cs := os.Getenv("MONGODB_CONNECTION_STRING")
-
+	
 	if cs == "" {
 		cs = "mongodb://db1:33001,db2:33002/ipo?replicaSet=mongowrapper-tests&readPreference=primaryPreferred"
 	}
-
+	
 	return NewUserRepository(ctx, cs)
 }
+
 
 func NewUserRepository(ctx context.Context, cs string) UserRepository {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cs))
 	if err != nil {
 		panic(err)
 	}
-
+	
 	u, err := url.Parse(cs)
 	if err != nil {
 		panic(err)
 	}
 	database := client.Database(u.Path[1:])
-
+	
 	return &usersRepository{
 		client: client,
 		ctx:    ctx,
@@ -199,7 +200,7 @@ func (s *usersRepository) DeleteOneById(ctx context.Context, id string) (isDelet
 	if bsonId, err := primitive.ObjectIDFromHex(id); err != nil {
 		return false, err
 	} else {
-		res, err := s.c.DeleteOne(ctx, bson.M{"_id": bsonId})
+		res, err := s.c.DeleteOne(ctx, bson.M{"_id":bsonId})
 		if err != nil {
 			return false, err
 		}
@@ -214,6 +215,7 @@ func (s *usersRepository) DeleteMany(ctx context.Context, findQuery bson.M) (del
 	}
 	return res.DeletedCount, nil
 }
+
 
 func (s *usersRepository) Watch(pipeline mongo.Pipeline) (<-chan UserChangeEvent, error) {
 	updateLookup := options.UpdateLookup
@@ -233,6 +235,7 @@ func (s *usersRepository) Watch(pipeline mongo.Pipeline) (<-chan UserChangeEvent
 			select {
 			case <-s.ctx.Done():
 				close(ch)
+				return
 			default:
 				iterateUserChangeStream(s.ctx, stream, ch)
 			}
@@ -258,7 +261,7 @@ type UserChangeEvent struct {
 	} `bson:"_id"`
 	OperationType string              `bson:"operationType"`
 	ClusterTime   primitive.Timestamp `bson:"clusterTime"`
-	FullDocument  *User               `bson:"fullDocument"`
+	FullDocument  *User         `bson:"fullDocument"`
 	DocumentKey   struct {
 		ID primitive.ObjectID `bson:"_id"`
 	} `bson:"documentKey"`
@@ -268,12 +271,13 @@ type UserChangeEvent struct {
 	} `bson:"ns"`
 }
 
+
 type UserUpdater interface {
 	SetEmail(vEmail string) UserUpdater
 	SetProfile(vProfile Profile) UserUpdater
 	SetAddressCity(vCity string) UserUpdater
 	SetFinIncome(vIncome int64) UserUpdater
-
+	
 	Changes() map[string]interface{}
 }
 
@@ -295,6 +299,7 @@ func (u *users_updater) Changes() map[string]interface{} {
 	return u.updates
 }
 
+
 func (u *users_updater) SetEmail(vEmail string) UserUpdater {
 	u.updates["email"] = vEmail
 	return u
@@ -314,3 +319,4 @@ func (u *users_updater) SetFinIncome(vIncome int64) UserUpdater {
 	u.updates["Fin.Income"] = vIncome
 	return u
 }
+

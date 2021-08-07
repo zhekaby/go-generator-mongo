@@ -12,7 +12,7 @@ services:
       - "33001:33001"
     healthcheck:
       test: test $$(echo "rs.initiate({_id:'mongowrapper-tests',members:[{_id:0,host:'db1:33001'},{_id:1,host:'db2:33002'}]}).ok || rs.status().ok" | mongo --port 33001 --quiet) -eq 1
-      interval: 10s
+      interval: 1s
       start_period: 0s
   db2_mongowrapper_test_node:
     hostname: db2

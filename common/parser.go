@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -15,7 +14,7 @@ import (
 )
 
 var (
-	structCommentMongo   = "mongowrapper:Collection"
+	structCommentMongo   = "mongowrapper:collection"
 	structCommentSwagger = "swagger:parameters"
 	bodyComment          = "in: body"
 )
@@ -107,8 +106,6 @@ func (p *Parser) Parse() error {
 		ast.Walk(&visitor{Parser: p}, f)
 	}
 
-	spew.Dump(p)
-
 	return nil
 }
 
@@ -121,12 +118,12 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 		return v
 
 	case *ast.GenDecl:
-		collectionName := v.needType(n.Doc, structCommentMongo)
-		if collectionName == "" {
-			collectionName = v.needType(n.Doc, structCommentSwagger)
+		args := v.needType(n.Doc, structCommentMongo)
+		if len(args) == 0 {
+			args = v.needType(n.Doc, structCommentSwagger)
 		}
 
-		if collectionName != "" {
+		if len(args) > 0 {
 			for _, nc := range n.Specs {
 				switch nct := nc.(type) {
 				case *ast.TypeSpec:
@@ -137,8 +134,8 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 
 		return v
 	case *ast.TypeSpec:
-		collectionName := v.needType(n.Doc, structCommentMongo)
-		if collectionName != "" {
+		args := v.needType(n.Doc, structCommentMongo)
+		if len(args) > 0 {
 
 			v.name = n.Name.String()
 			fmt.Printf("parsing %s\n", v.name)
@@ -147,13 +144,13 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 			deep(n.Type, "", "", "", "", "", "", "", "", &fields)
 			v.Parser.Collections = append(v.Parser.Collections, &Collection{
 				Typ:    v.name,
-				Name:   collectionName,
+				Name:   args[1],
 				Fields: fields,
 			})
 		}
 
-		collectionName = v.needType(n.Doc, structCommentSwagger)
-		if collectionName != "" {
+		args = v.needType(n.Doc, structCommentSwagger)
+		if len(args) > 0 {
 			if s, ok := n.Type.(*ast.StructType); ok {
 				for _, f := range s.Fields.List {
 					if needField(f, bodyComment) {
@@ -195,7 +192,7 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 	return nil
 }
 
-func (p *Parser) needType(comments *ast.CommentGroup, reqComment string) (collection string) {
+func (p *Parser) needType(comments *ast.CommentGroup, reqComment string) (arguments []string) {
 	if comments == nil {
 		return
 	}
@@ -222,7 +219,7 @@ func (p *Parser) needType(comments *ast.CommentGroup, reqComment string) (collec
 				data := strings.FieldsFunc(comment, func(r rune) bool {
 					return r == ' '
 				})
-				return data[1]
+				return data
 			}
 		}
 	}
@@ -275,21 +272,25 @@ func deep(n ast.Node, fieldName, jsonTag, jsonPrefix, bsonTag, bsonPrefix, goPre
 		for _, f := range n.Fields.List {
 			bsonTag := GetTag(f.Tag, "bson", f.Names[0].Name, 0)
 			jsonTag := GetTag(f.Tag, "json", f.Names[0].Name, 0)
+			var tag = ""
+			if f.Tag != nil {
+				tag = f.Tag.Value
+			}
 			switch ss := f.Type.(type) {
 			case *ast.StructType:
-				deep(ss, f.Names[0].Name, jsonTag, jsonPrefix+jsonTag, bsonTag, bsonPrefix+bsonTag, goPrefix+f.Names[0].Name, ns, f.Tag.Value, fields)
+				deep(ss, f.Names[0].Name, jsonTag, jsonPrefix+jsonTag, bsonTag, bsonPrefix+bsonTag, goPrefix+f.Names[0].Name, ns, tag, fields)
 			case *ast.StarExpr:
 				if ident, ok := ss.X.(*ast.Ident); ok {
 					if ident.Obj != nil {
 						if ts, ok := ident.Obj.Decl.(*ast.TypeSpec); ok {
-							deep(ts.Type, f.Names[0].Name, jsonTag, jsonPrefix+jsonTag, bsonTag, bsonPrefix+bsonTag, goPrefix+f.Names[0].Name, ns+"."+f.Names[0].Name, f.Tag.Value, fields)
+							deep(ts.Type, f.Names[0].Name, jsonTag, jsonPrefix+jsonTag, bsonTag, bsonPrefix+bsonTag, goPrefix+f.Names[0].Name, ns+"."+f.Names[0].Name, tag, fields)
 						}
 					} else {
-						deep(f.Type, f.Names[0].Name, jsonTag, jsonPrefix, bsonTag, bsonPrefix, goPrefix, ns, f.Tag.Value, fields)
+						deep(f.Type, f.Names[0].Name, jsonTag, jsonPrefix, bsonTag, bsonPrefix, goPrefix, ns, tag, fields)
 					}
 				}
 			default:
-				deep(f.Type, f.Names[0].Name, jsonTag, jsonPrefix, bsonTag, bsonPrefix, goPrefix, ns, f.Tag.Value, fields)
+				deep(f.Type, f.Names[0].Name, jsonTag, jsonPrefix, bsonTag, bsonPrefix, goPrefix, ns, tag, fields)
 			}
 
 		}

@@ -241,6 +241,7 @@ func (s *{{ .Name }}Repository) Watch(pipeline mongo.Pipeline) (<-chan {{ .Typ }
 			select {
 			case <-s.ctx.Done():
 				close(ch)
+				return
 			default:
 				iterate{{ .Typ }}ChangeStream(s.ctx, stream, ch)
 			}
