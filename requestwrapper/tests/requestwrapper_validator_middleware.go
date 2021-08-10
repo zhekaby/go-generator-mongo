@@ -92,19 +92,19 @@ func deviceCreateRequestParamsValidator(next http.Handler) http.Handler {
 	})
 }
 
-var requestwarapper_error_deviceCreateRequestParams_itemNum_max = struct {
-	Key   string  `json:"key"`
-	Value float64 `json:"value"`
-}{
-	Value: 15,
-	Key:   "max",
-}
 var requestwarapper_error_deviceCreateRequestParams_itemNum_min = struct {
 	Key   string  `json:"key"`
 	Value float64 `json:"value"`
 }{
 	Value: 4,
 	Key:   "min",
+}
+var requestwarapper_error_deviceCreateRequestParams_itemNum_max = struct {
+	Key   string  `json:"key"`
+	Value float64 `json:"value"`
+}{
+	Value: 15,
+	Key:   "max",
 }
 var requestwarapper_error_deviceCreateRequestParams_itemAssn_required_without_all = struct {
 	Key string `json:"key"`
