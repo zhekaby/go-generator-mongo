@@ -34,8 +34,8 @@ type StructInfo struct {
 	Fields       []Field
 }
 type Field struct {
-	Prop, Type, JsonProp, JsonPath, BsonProp, BsonPath, GoPath, Ns, NsShort, NsCompact string
-	Validations                                                                        map[string]string
+	Prop, Type, JsonProp, JsonPath, BsonProp, BsonPath, GoPath, Ns, NsShort, NsCompact, Tag string
+	Validations                                                                             map[string]string
 }
 type Collection struct {
 	Typ, Name string
@@ -141,7 +141,7 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 			fmt.Printf("parsing %s\n", v.name)
 
 			fields := make([]Field, 0, 100)
-			deep(n.Type, Field{}, "", "", "", "", "", "", &fields)
+			deep(n.Type, Field{}, "", "", "", "", "", &fields)
 			v.Parser.Collections = append(v.Parser.Collections, &Collection{
 				Typ:    v.name,
 				Name:   args[1],
@@ -172,7 +172,7 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 						}
 						name := ident.Name
 						fields := make([]Field, 0, 100)
-						deep(st, Field{Ns: name}, "", "", "", "", name, "", &fields)
+						deep(st, Field{Ns: name}, "", "", "", "", name, &fields)
 						v.Structs = append(v.Structs, &StructInfo{
 							Name:         n.Name.Name,
 							Body:         st,
@@ -243,15 +243,15 @@ func excludeTestFiles(fi os.FileInfo) bool {
 	return !strings.HasSuffix(fi.Name(), "_test.go")
 }
 
-func deep(n ast.Node, f Field, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, tag string, fields *[]Field) {
+func deep(n ast.Node, f Field, jsonTag, jsonPrefix, bsonTag, goPrefix, ns string, fields *[]Field) {
 	fi := *(&f)
 	switch n := n.(type) {
 	case *ast.TypeSpec:
 		switch ts := n.Type.(type) {
 		case *ast.StarExpr:
-			deep(ts.X, fi, "", "", "", goPrefix, ns, "", fields)
+			deep(ts.X, fi, "", "", "", goPrefix, ns, fields)
 		case *ast.StructType:
-			deep(ts, fi, "", "", "", goPrefix, ns, "", fields)
+			deep(ts, fi, "", "", "", goPrefix, ns, fields)
 		default:
 			return
 		}
@@ -260,7 +260,7 @@ func deep(n ast.Node, f Field, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, tag s
 			switch nct := nc.(type) {
 			case *ast.TypeSpec:
 				fi.Prop = nct.Name.Name
-				deep(nc, fi, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, "", fields)
+				deep(nc, fi, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, fields)
 
 			}
 		}
@@ -276,28 +276,27 @@ func deep(n ast.Node, f Field, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, tag s
 			}
 			bsonTag := GetTag(field.Tag, "bson", field.Names[0].Name, 0)
 			jsonTag := GetTag(field.Tag, "json", field.Names[0].Name, 0)
-			var tag = ""
 			if field.Tag != nil {
-				tag = field.Tag.Value
+				fi.Tag = field.Tag.Value
 			}
 			switch ss := field.Type.(type) {
 			case *ast.StructType:
 				fi.BsonPath = fi.BsonPath + bsonTag
-				deep(ss, fi, jsonTag, jsonPrefix+jsonTag, bsonTag, goPrefix+field.Names[0].Name, ns, tag, fields)
+				deep(ss, fi, jsonTag, jsonPrefix+jsonTag, bsonTag, goPrefix+field.Names[0].Name, ns, fields)
 			case *ast.StarExpr:
 				if ident, ok := ss.X.(*ast.Ident); ok {
 					if ident.Obj != nil {
 						if ts, ok := ident.Obj.Decl.(*ast.TypeSpec); ok {
 							fi.BsonPath = fi.BsonPath + bsonTag
-							deep(ts.Type, fi, jsonTag, jsonPrefix+jsonTag, bsonTag, goPrefix+field.Names[0].Name, ns+"."+field.Names[0].Name, tag, fields)
+							deep(ts.Type, fi, jsonTag, jsonPrefix+jsonTag, bsonTag, goPrefix+field.Names[0].Name, ns+"."+field.Names[0].Name, fields)
 						}
 					} else {
 
-						deep(field.Type, fi, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, tag, fields)
+						deep(field.Type, fi, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, fields)
 					}
 				}
 			default:
-				deep(field.Type, fi, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, tag, fields)
+				deep(field.Type, fi, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, fields)
 			}
 
 		}
@@ -321,7 +320,7 @@ func deep(n ast.Node, f Field, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, tag s
 			Ns:          ns,
 			NsShort:     ns[idx+1:],
 			NsCompact:   strings.Replace(ns, ".", "", -1),
-			Validations: getValidateRules(tag),
+			Validations: getValidateRules(fi.Tag),
 		}
 		*fields = append(*fields, *f)
 	case *ast.SelectorExpr:
@@ -344,12 +343,12 @@ func deep(n ast.Node, f Field, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, tag s
 			Ns:          ns,
 			NsShort:     ns[idx+1:],
 			NsCompact:   strings.Replace(ns, ".", "", -1),
-			Validations: getValidateRules(tag),
+			Validations: getValidateRules(fi.Tag),
 		}
 		*fields = append(*fields, *f)
 		break
 	case *ast.StarExpr:
-		deep(n.X, fi, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, tag, fields)
+		deep(n.X, fi, jsonTag, jsonPrefix, bsonTag, goPrefix, ns, fields)
 		break
 	default:
 		break
