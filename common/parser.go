@@ -141,7 +141,7 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 			fmt.Printf("parsing %s\n", v.name)
 
 			fields := make([]Field, 0, 100)
-			deep(n.Type, Field{}, "", "", &fields)
+			deep(n.Type, Field{}, "", &fields)
 			v.Parser.Collections = append(v.Parser.Collections, &Collection{
 				Typ:    v.name,
 				Name:   args[1],
@@ -172,7 +172,7 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 						}
 						name := ident.Name
 						fields := make([]Field, 0, 100)
-						deep(st, Field{Ns: name}, "", "", &fields)
+						deep(st, Field{Ns: name}, "", &fields)
 						v.Structs = append(v.Structs, &StructInfo{
 							Name:         n.Name.Name,
 							Body:         st,
@@ -243,15 +243,15 @@ func excludeTestFiles(fi os.FileInfo) bool {
 	return !strings.HasSuffix(fi.Name(), "_test.go")
 }
 
-func deep(n ast.Node, f Field, jsonPrefix, goPrefix string, fields *[]Field) {
+func deep(n ast.Node, f Field, jsonPrefix string, fields *[]Field) {
 	fi := *(&f)
 	switch n := n.(type) {
 	case *ast.TypeSpec:
 		switch ts := n.Type.(type) {
 		case *ast.StarExpr:
-			deep(ts.X, fi, "", goPrefix, fields)
+			deep(ts.X, fi, "", fields)
 		case *ast.StructType:
-			deep(ts, fi, "", goPrefix, fields)
+			deep(ts, fi, "", fields)
 		default:
 			return
 		}
@@ -260,7 +260,7 @@ func deep(n ast.Node, f Field, jsonPrefix, goPrefix string, fields *[]Field) {
 			switch nct := nc.(type) {
 			case *ast.TypeSpec:
 				fi.Prop = nct.Name.Name
-				deep(nc, fi, jsonPrefix, goPrefix, fields)
+				deep(nc, fi, jsonPrefix, fields)
 
 			}
 		}
@@ -281,22 +281,22 @@ func deep(n ast.Node, f Field, jsonPrefix, goPrefix string, fields *[]Field) {
 			}
 			switch ss := field.Type.(type) {
 			case *ast.StructType:
-				fi.BsonPath = fi.BsonPath + fi.BsonProp
-				deep(ss, fi, jsonPrefix+fi.JsonProp, goPrefix+field.Names[0].Name, fields)
+				fi.BsonPath, fi.GoPath = fi.BsonPath+fi.BsonProp, fi.GoPath+field.Names[0].Name
+				deep(ss, fi, jsonPrefix+fi.JsonProp, fields)
 			case *ast.StarExpr:
 				if ident, ok := ss.X.(*ast.Ident); ok {
 					if ident.Obj != nil {
 						if ts, ok := ident.Obj.Decl.(*ast.TypeSpec); ok {
-							fi.BsonPath, fi.Ns = fi.BsonPath+fi.BsonProp, fi.Ns+"."+field.Names[0].Name
-							deep(ts.Type, fi, jsonPrefix+fi.JsonProp, goPrefix+field.Names[0].Name, fields)
+							fi.BsonPath, fi.Ns, fi.GoPath = fi.BsonPath+fi.BsonProp, fi.Ns+"."+field.Names[0].Name, fi.GoPath+field.Names[0].Name
+							deep(ts.Type, fi, jsonPrefix+fi.JsonProp, fields)
 						}
 					} else {
 
-						deep(field.Type, fi, jsonPrefix, goPrefix, fields)
+						deep(field.Type, fi, jsonPrefix, fields)
 					}
 				}
 			default:
-				deep(field.Type, fi, jsonPrefix, goPrefix, fields)
+				deep(field.Type, fi, jsonPrefix, fields)
 			}
 
 		}
@@ -311,7 +311,7 @@ func deep(n ast.Node, f Field, jsonPrefix, goPrefix string, fields *[]Field) {
 		idx := strings.IndexByte(ns, byte('.'))
 		f := &Field{
 			Prop:        fi.Prop,
-			GoPath:      goPrefix + fi.Prop,
+			GoPath:      fi.GoPath + fi.Prop,
 			JsonProp:    fi.JsonProp,
 			JsonPath:    jsonPrefix + fi.JsonProp,
 			BsonProp:    fi.BsonProp,
@@ -330,11 +330,11 @@ func deep(n ast.Node, f Field, jsonPrefix, goPrefix string, fields *[]Field) {
 				typ = e.Name + "."
 			}
 		}
-		ns := goPrefix + "." + fi.Prop
+		ns := fi.GoPath + "." + fi.Prop
 		idx := strings.IndexByte(ns, byte('.'))
 		f := &Field{
 			Prop:        fi.Prop,
-			GoPath:      goPrefix + fi.Prop,
+			GoPath:      fi.GoPath + fi.Prop,
 			JsonProp:    fi.JsonProp,
 			JsonPath:    jsonPrefix + fi.JsonProp,
 			BsonProp:    fi.BsonProp,
@@ -348,7 +348,7 @@ func deep(n ast.Node, f Field, jsonPrefix, goPrefix string, fields *[]Field) {
 		*fields = append(*fields, *f)
 		break
 	case *ast.StarExpr:
-		deep(n.X, fi, jsonPrefix, goPrefix, fields)
+		deep(n.X, fi, jsonPrefix, fields)
 		break
 	default:
 		break
