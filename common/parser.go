@@ -244,7 +244,6 @@ func excludeTestFiles(fi os.FileInfo) bool {
 }
 
 func deep(n ast.Node, f Field, fields *[]Field) {
-	//fi := *(&f)
 	switch n := n.(type) {
 	case *ast.TypeSpec:
 		switch ts := n.Type.(type) {
