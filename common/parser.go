@@ -244,14 +244,14 @@ func excludeTestFiles(fi os.FileInfo) bool {
 }
 
 func deep(n ast.Node, f Field, fields *[]Field) {
-	fi := *(&f)
+	//fi := *(&f)
 	switch n := n.(type) {
 	case *ast.TypeSpec:
 		switch ts := n.Type.(type) {
 		case *ast.StarExpr:
-			deep(ts.X, fi, fields)
+			deep(ts.X, f, fields)
 		case *ast.StructType:
-			deep(ts, fi, fields)
+			deep(ts, f, fields)
 		default:
 			return
 		}
@@ -259,8 +259,8 @@ func deep(n ast.Node, f Field, fields *[]Field) {
 		for _, nc := range n.Specs {
 			switch nct := nc.(type) {
 			case *ast.TypeSpec:
-				fi.Prop = nct.Name.Name
-				deep(nc, fi, fields)
+				f.Prop = nct.Name.Name
+				deep(nc, f, fields)
 
 			}
 		}
@@ -291,7 +291,6 @@ func deep(n ast.Node, f Field, fields *[]Field) {
 							deep(ts.Type, fi, fields)
 						}
 					} else {
-
 						deep(field.Type, fi, fields)
 					}
 				}
@@ -307,20 +306,20 @@ func deep(n ast.Node, f Field, fields *[]Field) {
 		} else {
 			typ = n.Name
 		}
-		ns := fi.Ns + "." + fi.Prop
+		ns := f.Ns + "." + f.Prop
 		idx := strings.IndexByte(ns, byte('.'))
 		f := &Field{
-			Prop:        fi.Prop,
-			GoPath:      fi.GoPath + fi.Prop,
-			JsonProp:    fi.JsonProp,
-			JsonPath:    fi.JsonPath + fi.JsonProp,
-			BsonProp:    fi.BsonProp,
-			BsonPath:    fi.BsonPath + fi.BsonProp,
+			Prop:        f.Prop,
+			GoPath:      f.GoPath + f.Prop,
+			JsonProp:    f.JsonProp,
+			JsonPath:    f.JsonPath + f.JsonProp,
+			BsonProp:    f.BsonProp,
+			BsonPath:    f.BsonPath + f.BsonProp,
 			Type:        typ,
 			Ns:          ns,
 			NsShort:     ns[idx+1:],
 			NsCompact:   strings.Replace(ns, ".", "", -1),
-			Validations: getValidateRules(fi.Tag),
+			Validations: getValidateRules(f.Tag),
 		}
 		*fields = append(*fields, *f)
 	case *ast.SelectorExpr:
@@ -330,25 +329,25 @@ func deep(n ast.Node, f Field, fields *[]Field) {
 				typ = e.Name + "."
 			}
 		}
-		ns := fi.GoPath + "." + fi.Prop
+		ns := f.GoPath + "." + f.Prop
 		idx := strings.IndexByte(ns, byte('.'))
 		f := &Field{
-			Prop:        fi.Prop,
-			GoPath:      fi.GoPath + fi.Prop,
-			JsonProp:    fi.JsonProp,
-			JsonPath:    fi.JsonPath + fi.JsonProp,
-			BsonProp:    fi.BsonProp,
-			BsonPath:    fi.BsonPath + fi.BsonProp,
+			Prop:        f.Prop,
+			GoPath:      f.GoPath + f.Prop,
+			JsonProp:    f.JsonProp,
+			JsonPath:    f.JsonPath + f.JsonProp,
+			BsonProp:    f.BsonProp,
+			BsonPath:    f.BsonPath + f.BsonProp,
 			Type:        typ + n.Sel.Name,
 			Ns:          ns,
 			NsShort:     ns[idx+1:],
 			NsCompact:   strings.Replace(ns, ".", "", -1),
-			Validations: getValidateRules(fi.Tag),
+			Validations: getValidateRules(f.Tag),
 		}
 		*fields = append(*fields, *f)
 		break
 	case *ast.StarExpr:
-		deep(n.X, fi, fields)
+		deep(n.X, f, fields)
 		break
 	default:
 		break
