@@ -9,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	{{ if not .DbVar }}"net/url"{{end}}
-	"os"
 	"sync"
 	"time"
 )
@@ -38,21 +37,11 @@ type {{ .Name }}Repository struct {
 }
 
 func New{{ .Typ }}RepositoryDefault(ctx context.Context) {{ .Typ }}Repository {
-	cs := os.Getenv("{{ $.CsVar }}")
-	{{ if $.Cs }}
-	if cs == "" {
-		cs = "{{ $.Cs }}"
-	}
-	{{end}}
-	return New{{ .Typ }}Repository(ctx, cs)
-}
-
-
-func New{{ .Typ }}Repository(ctx context.Context, cs string) {{ .Typ }}Repository {
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cs))
+	u, err := url.Parse("{{ $.Cs }}")
 	if err != nil {
 		panic(err)
 	}
+	client := newClient(ctx, u.String())
 	{{ if .DbVar }}
 	dbName := os.Getenv("{{ .DbVar }}");
 	if dbName == "" {
@@ -60,10 +49,29 @@ func New{{ .Typ }}Repository(ctx context.Context, cs string) {{ .Typ }}Repositor
 	} 
 	database := client.Database(dbName)
 	{{else}}
+	
+	database := client.Database(u.Path[1:])
+	{{end}}
+	return &{{ .Name }}Repository{
+		client: client,
+		ctx:    ctx,
+		c:      database.Collection("{{ .Name }}"),
+	}
+}
+
+func New{{ .Typ }}Repository(ctx context.Context, cs string) {{ .Typ }}Repository {
 	u, err := url.Parse(cs)
 	if err != nil {
 		panic(err)
 	}
+	client := newClient(ctx, u.String())
+	{{ if .DbVar }}
+	dbName := os.Getenv("{{ .DbVar }}");
+	if dbName == "" {
+		panic("{{ .DbVar }} passed but empty")
+	} 
+	database := client.Database(dbName)
+	{{else}}
 	database := client.Database(u.Path[1:])
 	{{end}}
 	return &{{ .Name }}Repository{

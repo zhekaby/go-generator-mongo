@@ -1,11 +1,11 @@
-all: run_docker generate wait_docker test stop_docker build
+all: generate test build
 
 run_docker:
 	docker-compose down --remove-orphans && docker-compose up -d
 
 wait_docker:
 	echo 'waiting replica is up...'
-	while ! docker ps | grep mongowrapper | grep '(healthy)'; do sleep 1; done
+	#while ! docker ps | grep mongowrapper | grep '(healthy)'; do sleep 1; done
 	sleep 8
 
 stop_docker:
