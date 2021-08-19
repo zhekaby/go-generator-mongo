@@ -14,15 +14,16 @@ import (
 )
 
 var (
-	structCommentMongo   = "mongowrapper:collection"
-	structCommentSwagger = "swagger:parameters"
-	bodyComment          = "in: body"
+	structCommentCollection  = "mongowrapper:collection"
+	structCommentAggregation = "mongowrapper:aggregation"
+	structCommentSwagger     = "swagger:parameters"
+	bodyComment              = "in: body"
 )
 
 type Parser struct {
 	In, Dir, PkgPath, PkgName string
 	isDir                     bool
-	Collections               []*Collection
+	Collections, Aggregations []*DataView
 	Structs                   []*StructInfo
 	Decls                     map[string]*ast.StructType
 }
@@ -37,7 +38,7 @@ type Field struct {
 	Prop, Type, JsonProp, JsonPath, BsonProp, BsonPath, GoPath, Ns, NsShort, NsCompact, Tag string
 	Validations                                                                             map[string]string
 }
-type Collection struct {
+type DataView struct {
 	Typ, Name string
 	Fields    []Field
 }
@@ -60,7 +61,7 @@ func NewParser(in string) *Parser {
 	p := &Parser{
 		In: fin, isDir: fInfo.IsDir(),
 		Structs:     make([]*StructInfo, 0, 50),
-		Collections: make([]*Collection, 0, 50),
+		Collections: make([]*DataView, 0, 50),
 		Decls:       make(map[string]*ast.StructType, 200),
 	}
 
@@ -118,9 +119,12 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 		return v
 
 	case *ast.GenDecl:
-		args := v.needType(n.Doc, structCommentMongo)
+		args := v.needType(n.Doc, structCommentCollection)
 		if len(args) == 0 {
 			args = v.needType(n.Doc, structCommentSwagger)
+		}
+		if len(args) == 0 {
+			args = v.needType(n.Doc, structCommentAggregation)
 		}
 
 		if len(args) > 0 {
@@ -134,15 +138,28 @@ func (v *visitor) Visit(n ast.Node) (w ast.Visitor) {
 
 		return v
 	case *ast.TypeSpec:
-		args := v.needType(n.Doc, structCommentMongo)
-		if len(args) > 0 {
+		args := v.needType(n.Doc, structCommentCollection)
+		if len(args) > 1 {
 
 			v.name = n.Name.String()
-			fmt.Printf("parsing %s\n", v.name)
+			fmt.Printf("parsing collection %s\n", v.name)
 
 			fields := make([]Field, 0, 100)
 			deep(n.Type, Field{}, &fields)
-			v.Parser.Collections = append(v.Parser.Collections, &Collection{
+			v.Parser.Collections = append(v.Parser.Collections, &DataView{
+				Typ:    v.name,
+				Name:   args[1],
+				Fields: fields,
+			})
+		}
+
+		args = v.needType(n.Doc, structCommentAggregation)
+		if len(args) > 1 {
+			v.name = n.Name.String()
+			fmt.Printf("parsing aggregation %s\n", v.name)
+			fields := make([]Field, 0, 100)
+			deep(n.Type, Field{}, &fields)
+			v.Parser.Aggregations = append(v.Parser.Aggregations, &DataView{
 				Typ:    v.name,
 				Name:   args[1],
 				Fields: fields,

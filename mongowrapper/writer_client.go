@@ -6,14 +6,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"net/url"
 	"sync"
 )
 
 var once sync.Once
 var client *mongo.Client
+var database *mongo.Database
 
 func newClient(ctx context.Context, cs string) *mongo.Client {
 	once.Do(func() {
+		u, err := url.Parse("{{ $.Cs }}")
+		if err != nil {
+			panic(err)
+		}
 		c, err := mongo.Connect(ctx, options.Client().ApplyURI(cs))
 		if err != nil {
 			panic(err)
@@ -23,6 +29,15 @@ func newClient(ctx context.Context, cs string) *mongo.Client {
 			panic(err)
 		}
 		client = c
+		{{ if .DbVar }}
+		dbName := os.Getenv("{{ .DbVar }}");
+		if dbName == "" {
+			panic("{{ .DbVar }} passed but empty")
+		} 
+		database = client.Database(dbName)
+		{{else}}
+		database = client.Database(u.Path[1:])
+		{{end}}
 	})
 	return client
 }

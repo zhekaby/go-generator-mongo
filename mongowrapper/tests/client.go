@@ -6,14 +6,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"net/url"
 	"sync"
 )
 
 var once sync.Once
 var client *mongo.Client
+var database *mongo.Database
 
 func newClient(ctx context.Context, cs string) *mongo.Client {
 	once.Do(func() {
+		u, err := url.Parse("mongodb://db1:33001,db2:33002/ipo?replicaSet=mongowrapper-tests&readPreference=primaryPreferred")
+		if err != nil {
+			panic(err)
+		}
 		c, err := mongo.Connect(ctx, options.Client().ApplyURI(cs))
 		if err != nil {
 			panic(err)
@@ -23,6 +29,9 @@ func newClient(ctx context.Context, cs string) *mongo.Client {
 			panic(err)
 		}
 		client = c
+
+		database = client.Database(u.Path[1:])
+
 	})
 	return client
 }

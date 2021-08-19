@@ -1,5 +1,16 @@
 package main
 
+//func (s *usersRepository) Project(ctx context.Context, pipeline mongo.Pipeline)  ([]*User, error) {
+//	if cursor, err := s.c.Aggregate(ctx, pipeline); err != nil {
+//		if err == mongo.ErrNoDocuments {
+//			return nil, nil
+//		}
+//	}else {
+//		for cursor.Next(ctx) {
+//
+//		}
+//	}
+//}
 var writerIface = `{{ $tick := "` + "`" + `" }}
 import (
 	"context"
@@ -27,7 +38,10 @@ type {{ .Typ }}Repository interface {
 	DeleteOne(ctx context.Context, findQuery bson.M) (isDeleted bool, err error)
 	DeleteOneById(ctx context.Context, id string) (isDeleted bool, err error)
 	DeleteMany(ctx context.Context, findQuery bson.M) (delete int64, err error)
-	Watch(pipeline mongo.Pipeline) (<-chan {{ .Typ }}ChangeEvent, error)
+	Watch(pipeline mongo.Pipeline, ch chan<- {{ .Typ }}ChangeEvent) error
+{{range .Aggregations}}
+	{{ if eq .Name $.Name }}AggregateTo{{ .Typ }}(ctx context.Context, pipeline mongo.Pipeline, limit int)  ([]*{{ .Typ }}, error){{ end }}
+{{end}}
 }
 
 type {{ .Name }}Repository struct {
@@ -37,21 +51,7 @@ type {{ .Name }}Repository struct {
 }
 
 func New{{ .Typ }}RepositoryDefault(ctx context.Context) {{ .Typ }}Repository {
-	u, err := url.Parse("{{ $.Cs }}")
-	if err != nil {
-		panic(err)
-	}
-	client := newClient(ctx, u.String())
-	{{ if .DbVar }}
-	dbName := os.Getenv("{{ .DbVar }}");
-	if dbName == "" {
-		panic("{{ .DbVar }} passed but empty")
-	} 
-	database := client.Database(dbName)
-	{{else}}
-	
-	database := client.Database(u.Path[1:])
-	{{end}}
+	client := newClient(ctx, "{{ $.Cs }}")
 	return &{{ .Name }}Repository{
 		client: client,
 		ctx:    ctx,
@@ -65,15 +65,6 @@ func New{{ .Typ }}Repository(ctx context.Context, cs string) {{ .Typ }}Repositor
 		panic(err)
 	}
 	client := newClient(ctx, u.String())
-	{{ if .DbVar }}
-	dbName := os.Getenv("{{ .DbVar }}");
-	if dbName == "" {
-		panic("{{ .DbVar }} passed but empty")
-	} 
-	database := client.Database(dbName)
-	{{else}}
-	database := client.Database(u.Path[1:])
-	{{end}}
 	return &{{ .Name }}Repository{
 		client: client,
 		ctx:    ctx,
@@ -231,24 +222,22 @@ func (s *{{ .Name }}Repository) DeleteMany(ctx context.Context, findQuery bson.M
 }
 
 
-func (s *{{ .Name }}Repository) Watch(pipeline mongo.Pipeline) (<-chan {{ .Typ }}ChangeEvent, error) {
+func (s *{{ .Name }}Repository)Watch(pipeline mongo.Pipeline, ch chan<- {{ .Typ }}ChangeEvent) error {
 	updateLookup := options.UpdateLookup
 	opts1 := &options.ChangeStreamOptions{
 		FullDocument: &updateLookup,
 	}
 	stream, err := s.c.Watch(s.ctx, pipeline, opts1)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	var wg sync.WaitGroup
-	ch := make(chan {{ .Typ }}ChangeEvent)
 	go func() {
 		wg.Add(1)
 		defer wg.Done()
 		for {
 			select {
 			case <-s.ctx.Done():
-				close(ch)
 				return
 			default:
 				iterate{{ .Typ }}ChangeStream(s.ctx, stream, ch)
@@ -256,7 +245,7 @@ func (s *{{ .Name }}Repository) Watch(pipeline mongo.Pipeline) (<-chan {{ .Typ }
 		}
 	}()
 	wg.Wait()
-	return ch, nil
+	return nil
 }
 
 func iterate{{ .Typ }}ChangeStream(ctx context.Context, stream *mongo.ChangeStream, ch chan<- {{ .Typ }}ChangeEvent) {

@@ -27,7 +27,9 @@ type UserRepository interface {
 	DeleteOne(ctx context.Context, findQuery bson.M) (isDeleted bool, err error)
 	DeleteOneById(ctx context.Context, id string) (isDeleted bool, err error)
 	DeleteMany(ctx context.Context, findQuery bson.M) (delete int64, err error)
-	Watch(pipeline mongo.Pipeline) (<-chan UserChangeEvent, error)
+	Watch(pipeline mongo.Pipeline, ch chan<- UserChangeEvent) error
+
+	AggregateToUserView(ctx context.Context, pipeline mongo.Pipeline, limit int) ([]*UserView, error)
 }
 
 type usersRepository struct {
@@ -37,14 +39,7 @@ type usersRepository struct {
 }
 
 func NewUserRepositoryDefault(ctx context.Context) UserRepository {
-	u, err := url.Parse("mongodb://db1:33001,db2:33002/ipo?replicaSet=mongowrapper-tests&readPreference=primaryPreferred")
-	if err != nil {
-		panic(err)
-	}
-	client := newClient(ctx, u.String())
-
-	database := client.Database(u.Path[1:])
-
+	client := newClient(ctx, "mongodb://db1:33001,db2:33002/ipo?replicaSet=mongowrapper-tests&readPreference=primaryPreferred")
 	return &usersRepository{
 		client: client,
 		ctx:    ctx,
@@ -58,9 +53,6 @@ func NewUserRepository(ctx context.Context, cs string) UserRepository {
 		panic(err)
 	}
 	client := newClient(ctx, u.String())
-
-	database := client.Database(u.Path[1:])
-
 	return &usersRepository{
 		client: client,
 		ctx:    ctx,
@@ -217,24 +209,22 @@ func (s *usersRepository) DeleteMany(ctx context.Context, findQuery bson.M) (del
 	return res.DeletedCount, nil
 }
 
-func (s *usersRepository) Watch(pipeline mongo.Pipeline) (<-chan UserChangeEvent, error) {
+func (s *usersRepository) Watch(pipeline mongo.Pipeline, ch chan<- UserChangeEvent) error {
 	updateLookup := options.UpdateLookup
 	opts1 := &options.ChangeStreamOptions{
 		FullDocument: &updateLookup,
 	}
 	stream, err := s.c.Watch(s.ctx, pipeline, opts1)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	var wg sync.WaitGroup
-	ch := make(chan UserChangeEvent)
 	go func() {
 		wg.Add(1)
 		defer wg.Done()
 		for {
 			select {
 			case <-s.ctx.Done():
-				close(ch)
 				return
 			default:
 				iterateUserChangeStream(s.ctx, stream, ch)
@@ -242,7 +232,7 @@ func (s *usersRepository) Watch(pipeline mongo.Pipeline) (<-chan UserChangeEvent
 		}
 	}()
 	wg.Wait()
-	return ch, nil
+	return nil
 }
 
 func iterateUserChangeStream(ctx context.Context, stream *mongo.ChangeStream, ch chan<- UserChangeEvent) {
