@@ -1,0 +1,28 @@
+version: "3.4"
+services:
+  db1-mongowrapper-test:
+    image: mongo:5.0
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs", "--port", "30001" ]
+    container_name: db1-mongowrapper-test
+    hostname: db1
+    depends_on: [ "db2-mongowrapper-test" ]
+    ports:
+      - "31001:30001"
+    volumes:
+      - ./test.db.js:/docker-entrypoint-initdb.d/test.db.js:ro
+    healthcheck:
+      test: test $$(echo "rs.initiate({_id:'rs',members:[{_id:0,host:'db1:30001'},{_id:1,host:'db2:30002'}]}).ok || rs.status().ok" | mongo --port 30001 --quiet) -eq 1
+      interval: 10s
+      start_period: 1s
+    logging: { driver: none }
+
+  db2-mongowrapper-test:
+    image: mongo:5.0
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs", "--quiet", "--port", "30002" ]
+    container_name: db2-mongowrapper-test
+    hostname: db2
+    volumes:
+      - ./test.db.js:/docker-entrypoint-initdb.d/test.db.js:ro
+    ports:
+      - "31002:30002"
+    logging: { driver: none }

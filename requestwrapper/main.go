@@ -3,11 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/zhekaby/go-generators/common"
 	"os"
 )
-
-var cs = flag.String("cs", "", "default connection string")
-var csVar = flag.String("cs_var", "", "env var name represents connection string")
 
 func main() {
 	flag.Parse()
@@ -19,13 +17,13 @@ func main() {
 	}
 
 	for _, file := range files {
-		p := NewParser(*cs, *csVar, file)
+		p := common.NewParser(file)
 		if err := p.Parse(); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
 		w := NewWriter(p)
 		w.Write()
 	}
-
 }

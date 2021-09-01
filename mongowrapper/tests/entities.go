@@ -1,6 +1,12 @@
 package tests
 
-//s4bmongo:collection users
+//mongowrapper:aggregation users
+type UserView struct {
+	Email   string  `bson:"email"`
+	Profile Profile `bson:"profile"`
+}
+
+//mongowrapper:collection users
 type User struct {
 	Email   string  `bson:"email"`
 	Profile Profile `bson:"profile"`
@@ -19,4 +25,9 @@ type Profile struct {
 
 type Finance struct {
 	Income int64
+}
+
+type flag struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
 }

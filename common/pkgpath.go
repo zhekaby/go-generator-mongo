@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-func getPkgPath(fname string, isDir bool) (string, error) {
+func GetPkgPath(fname string, isDir bool) (string, error) {
 	if !filepath.IsAbs(fname) {
 		pwd, err := os.Getwd()
 		if err != nil {
