@@ -6,7 +6,7 @@ require (
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/mailru/easyjson v0.7.7
 	github.com/smartystreets/goconvey v1.6.4
-	github.com/zhekaby/go-generators/common v0.0.0-20210901175550-613abc61f184
+	github.com/zhekaby/go-generators/common v0.0.0-20210901174744-39cbe1eeef13
 )
 
 require (
@@ -17,7 +17,6 @@ require (
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d // indirect
-	github.com/zhekaby/go-generators/mongowrapper v0.0.0-20210901175550-613abc61f184 // indirect
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
 	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069 // indirect
 	golang.org/x/text v0.3.6 // indirect
