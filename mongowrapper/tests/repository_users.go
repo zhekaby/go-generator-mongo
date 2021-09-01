@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"net/url"
+	"os"
 	"sync"
 	"time"
 )
@@ -39,7 +40,13 @@ type usersRepository struct {
 }
 
 func NewUserRepositoryDefault(ctx context.Context) UserRepository {
-	client := newClient(ctx, "mongodb://db1:33001,db2:33002/ipo?replicaSet=mongowrapper-tests&readPreference=primaryPreferred")
+
+	cs := os.Getenv("MONGODB_CONNECTION_STRING")
+	if cs == "" {
+		cs = "mongodb://db1:31001,db2:31002/ipo?replicaSet=rs&readPreference=primaryPreferred"
+	}
+	client := newClient(ctx, cs)
+
 	return &usersRepository{
 		client: client,
 		ctx:    ctx,

@@ -12,7 +12,7 @@ stop_docker:
 	docker-compose down --remove-orphans
 
 generate:
-	go run . --cs_var=MONGODB_CONNECTION_STRING --cs='mongodb://db1:33001,db2:33002/ipo?replicaSet=mongowrapper-tests&readPreference=primaryPreferred' tests/
+	go run . --cs_var=MONGODB_CONNECTION_STRING --cs='mongodb://db1:31001,db2:31002/ipo?replicaSet=rs&readPreference=primaryPreferred' tests/
 
 build:
 	CGO_ENABLED=0 go build -a -ldflags="-w -s -X main.VERSION=`git rev-parse HEAD | cut -c1-8`" -o ~/go/bin/mongowrapper

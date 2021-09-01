@@ -18,22 +18,38 @@ func NewWriter(cs, csVar, dbVar string, p *common.Parser) *writer {
 }
 
 func (w *writer) Write() error {
-	if err := w.writeClient(); err != nil {
+	fnGitignore := fmt.Sprintf("%s/.gitignore", w.Dir)
+	_ = os.Remove(fnGitignore)
+	gitignore, err := os.Create(fnGitignore)
+	if err != nil {
+		return err
+	}
+	defer gitignore.Close()
+	fn := fmt.Sprintf("%s/client.go", w.Dir)
+	fmt.Fprintf(gitignore, "client.go\n")
+	if err := w.writeClient(fn); err != nil {
 		return err
 	}
 	for _, c := range w.Collections {
 		w.DataView = c
-		if err := w.writeCollections(); err != nil {
+		fn := fmt.Sprintf("%s/repository_%s.go", w.Dir, w.DataView.Name)
+		fmt.Fprintf(gitignore, fmt.Sprintf("repository_%s.go\n", w.DataView.Name))
+
+		if err := w.writeCollections(fn); err != nil {
 			return err
 		}
 	}
 
+	err = os.Remove(fmt.Sprintf("%s/aggregation_funcs.go", w.Dir))
+	if err != nil {
+		return err
+	}
 	if len(w.Aggregations) > 0 {
 		if err := w.writeAggregations(); err != nil {
 			return err
 		}
 	}
-
+	fmt.Fprintf(gitignore, "aggregation_funcs.go\n")
 	return nil
 }
 
@@ -60,8 +76,8 @@ func (w *writer) writeAggregations() error {
 	return nil
 }
 
-func (w *writer) writeClient() error {
-	f, err := os.Create(fmt.Sprintf("%s/client.go", w.Dir))
+func (w *writer) writeClient(fn string) error {
+	f, err := os.Create(fn)
 	if err != nil {
 		return err
 	}
@@ -82,8 +98,8 @@ func (w *writer) writeClient() error {
 
 }
 
-func (w *writer) writeCollections() error {
-	f, err := os.Create(fmt.Sprintf("%s/repository_%s.go", w.Dir, w.DataView.Name))
+func (w *writer) writeCollections(fn string) error {
+	f, err := os.Create(fn)
 	if err != nil {
 		return err
 	}

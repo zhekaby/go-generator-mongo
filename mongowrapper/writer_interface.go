@@ -20,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	{{ if not .DbVar }}"net/url"{{end}}
+	"os"
 	"sync"
 	"time"
 )
@@ -51,7 +52,15 @@ type {{ .Name }}Repository struct {
 }
 
 func New{{ .Typ }}RepositoryDefault(ctx context.Context) {{ .Typ }}Repository {
+	{{if $.CsVar }}
+	cs := os.Getenv("{{ $.CsVar }}")
+	if cs == "" {
+		cs = "{{ $.Cs }}"
+	}
+	client := newClient(ctx, cs)
+	{{else}}
 	client := newClient(ctx, "{{ $.Cs }}")
+	{{end}}
 	return &{{ .Name }}Repository{
 		client: client,
 		ctx:    ctx,
