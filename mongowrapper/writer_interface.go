@@ -1,16 +1,5 @@
 package main
 
-//func (s *usersRepository) Project(ctx context.Context, pipeline mongo.Pipeline)  ([]*User, error) {
-//	if cursor, err := s.c.Aggregate(ctx, pipeline); err != nil {
-//		if err == mongo.ErrNoDocuments {
-//			return nil, nil
-//		}
-//	}else {
-//		for cursor.Next(ctx) {
-//
-//		}
-//	}
-//}
 var writerIface = `{{ $tick := "` + "`" + `" }}
 import (
 	"context"
@@ -28,7 +17,9 @@ import (
 type {{ .Typ }}Repository interface {
 	Ping() error
 	FindOne(ctx context.Context, findQuery bson.M) (*{{ .Typ }}, error)
+	Exists(ctx context.Context, findQuery bson.M) (bool, error)
 	FindOneById(ctx context.Context, id string) (*{{ .Typ }}, error)
+	ExistsById(ctx context.Context, id string) (bool, error)
 	FindMany(ctx context.Context, findQuery bson.M, sort bson.D, skip, limit int64) ([]*{{ .Typ }}, error)
 	InsertOne(ctx context.Context, record *{{ .Typ }}) (InsertedID primitive.ObjectID, err error)
 	InsertMany(ctx context.Context, records []*{{ .Typ }}) (InsertedID []primitive.ObjectID, err error)
@@ -123,6 +114,18 @@ func (s *{{ .Name }}Repository) FindOne(ctx context.Context, findQuery bson.M) (
 	return &r, nil
 }
 
+func (s *{{ .Name }}Repository) Exists(ctx context.Context, findQuery bson.M) (bool, error) {
+	res := s.c.FindOne(ctx, findQuery)
+	err := res.Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 func (s *{{ .Name }}Repository) FindOneById(ctx context.Context, id string) (*{{ .Typ }}, error) {
 	prim, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -136,6 +139,22 @@ func (s *{{ .Name }}Repository) FindOneById(ctx context.Context, id string) (*{{
 		return nil, err
 	}
 	return &r, nil
+}
+
+func (s *{{ .Name }}Repository) ExistsById(ctx context.Context, id string) (bool, error) {
+	prim, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return false, err
+	}
+	res := s.c.FindOne(ctx, bson.M{"_id": prim})
+	err = res.Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func (s *{{ .Name }}Repository) InsertOne(ctx context.Context, record *{{ .Typ }}) (InsertedID primitive.ObjectID, err error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"testing"
 )
 
@@ -26,6 +27,27 @@ func TestUsersRepository_InsertOne(t *testing.T) {
 			user, err := repo.FindOneById(ctx, id.Hex())
 			So(err, ShouldBeNil)
 			shouldEqual(u, user)
+		})
+
+		Convey("ExistsById", func() {
+			exists, err := repo.ExistsById(ctx, id.Hex())
+			So(exists, ShouldBeTrue)
+			So(err, ShouldBeNil)
+		})
+		Convey("ExistsById negative", func() {
+			exists, err := repo.ExistsById(ctx, primitive.NewObjectID().Hex())
+			So(exists, ShouldBeFalse)
+			So(err, ShouldBeNil)
+		})
+		Convey("Exists", func() {
+			exists, err := repo.Exists(ctx, bson.M{"_id": id})
+			So(exists, ShouldBeTrue)
+			So(err, ShouldBeNil)
+		})
+		Convey("Exists negative", func() {
+			exists, err := repo.Exists(ctx, bson.M{"_id": primitive.NewObjectID()})
+			So(exists, ShouldBeFalse)
+			So(err, ShouldBeNil)
 		})
 	})
 }
